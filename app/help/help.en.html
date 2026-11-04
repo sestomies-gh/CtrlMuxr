@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CtrlMuxr – Help</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1d;--mut:#5c5c5c;--acc:#d9780f;--card:#f5f5f5;--line:#ddd;--code:#eee}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#e8e8e8;--mut:#a5a5a5;--acc:#f59a2b;--card:#202020;--line:#383838;--code:#262626}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+.wrap{display:flex;max-width:1100px;margin:0 auto}
+nav{width:240px;flex:none;position:sticky;top:0;align-self:flex-start;height:100vh;overflow:auto;padding:24px 16px;border-right:1px solid var(--line)}
+nav b{display:block;color:var(--acc);font-size:18px;margin-bottom:8px}
+nav a{display:block;color:var(--fg);text-decoration:none;padding:3px 0;font-size:14px}
+nav a:hover{color:var(--acc)}
+main{padding:24px 32px 80px;min-width:0}
+h1{margin:0 0 4px;font-size:28px}
+h1 span{color:var(--acc)}
+h1 svg.logo{margin:0 12px 0 0;vertical-align:middle}
+.tag{color:var(--mut);margin:0 0 24px}
+h2{margin:36px 0 8px;padding-top:8px;border-top:1px solid var(--line);font-size:21px}
+h3{margin:20px 0 4px;font-size:16px}
+p,li{max-width:70ch}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font:13px Consolas,monospace}
+.box{background:var(--card);border-left:4px solid var(--acc);padding:10px 14px;margin:12px 0;border-radius:4px;max-width:72ch}
+table{border-collapse:collapse;margin:10px 0;width:100%;max-width:820px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--card)}
+dt{font-weight:600;margin-top:10px}
+dd{margin:2px 0 0 0;max-width:70ch}
+svg{max-width:100%;height:auto;margin:10px 0}
+img{max-width:100%;height:auto;margin:6px 0;border:1px solid var(--line);border-radius:4px}
+.todo{border:1px dashed var(--line);color:var(--mut);padding:14px;margin:10px 0;border-radius:4px;max-width:72ch}
+@media (max-width:760px){.wrap{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+<b>CtrlMuxr</b>
+<a href="#what">1. What CtrlMuxr is</a>
+<a href="#how">2. How it works</a>
+<a href="#start">3. Quick start</a>
+<a href="#tabs">4. The tabs</a>
+<a href="#modes">5. Axis modes</a>
+<a href="#problems">6. If the game does not accept it</a>
+<a href="#files">7. Where the files are</a>
+<a href="#glossary">8. Glossary</a>
+</nav>
+<main>
+<h1><svg class="logo" width="56" height="56" role="img" aria-label="CtrlMuxr logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#121212"/><g fill="none" stroke="#F59A2B" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"><path d="M38 48 H70 C94 48 98 100 120 100"/><path d="M46 100 H120"/><path d="M38 152 H70 C94 152 98 100 120 100"/><path d="M120 100 H156"/></g><g fill="#F59A2B"><circle cx="41" cy="48" r="14"/><rect x="29" y="140" width="24" height="24"/><path d="M30 89 L52 111 M52 89 L30 111" fill="none" stroke="#F59A2B" stroke-width="11"/></g><circle cx="171" cy="100" r="18" fill="#121212" stroke="#F59A2B" stroke-width="7"/><circle cx="171" cy="100" r="10" fill="#F59A2B"/></svg><span>Ctrl</span>Muxr</h1>
+<p class="tag">Multiple Controllers &rarr; One Input</p>
+
+<h2 id="what">1. What CtrlMuxr is</h2>
+<p>Many older (and some newer) games can only use <b>one controller</b>. If you have a separate wheel, pedals and gear shifter, the game usually will not let you combine them: you pick the wheel in the game menu and the shifter stays unused.</p>
+<p>CtrlMuxr merges your devices so that the game sees <b>one controller</b> with all the axes and buttons you need.<br><br> You also decide how the axes are converted (for example throttle and brake on one axis, or the brake on its own axis) and which buttons the game sees.</p>
+<div class="box">The app installs no drivers and does not change Windows. Everything happens in the game's own folder, and it can be removed with one button (<i>Uninstall proxy…</i>).</div>
+
+<h2 id="how">2. How it works</h2>
+<p>A game finds its controllers through Windows' <b>DirectInput</b> library (a DLL file). CtrlMuxr puts a small DLL of its own in the game's folder, called the <b>proxy</b> here. The game loads it in place of Windows' own DLL, and the proxy does three things:</p>
+<ol>
+<li><b>Reads your real devices</b> (two or more, e.g. wheel, pedals, shifter, handbrake, buttonbox; up to 9 devices in all).</li>
+<li><b>Adds them to the main device</b> (the wheel) according to your settings: their axes and buttons become axes and buttons of the wheel, so the game sees one controller.</li>
+<li><b>Shows the game only the main device</b> (the other devices are hidden from it). Force feedback (FFB) still goes to the wheel. You choose the main device in <i>Add game…</i> (section 3, step 1).</li>
+</ol>
+<svg viewBox="0 0 640 232" role="img" aria-label="The other devices (for example pedals, shifter, handbrake and a buttonbox) are added by the proxy to the main device, the wheel; the game sees one controller, the wheel">
+<g font-family="Segoe UI,Arial" font-size="13" fill="currentColor">
+<g fill="none" stroke="#f59a2b" stroke-width="2.5"><path d="M140 45 H200 C225 45 225 104 270 104"/><path d="M140 83 H200 C225 83 225 104 270 104"/><path d="M490 104 H522"/><path d="M510 94 L522 104 L510 114"/><path d="M258 94 L270 104 L258 114"/></g>
+<g fill="none" stroke="#f59a2b" stroke-width="2.5" stroke-dasharray="6 5"><path d="M140 121 H200 C225 121 225 104 270 104"/><path d="M140 159 H200 C225 159 225 104 270 104"/></g>
+<g fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"><rect x="20" y="30" width="120" height="30" rx="6"/><rect x="20" y="68" width="120" height="30" rx="6"/><rect x="20" y="106" width="120" height="30" rx="6" stroke-dasharray="6 5"/><rect x="20" y="144" width="120" height="30" rx="6" stroke-dasharray="6 5"/><rect x="522" y="76" width="112" height="56" rx="6"/></g>
+<rect x="250" y="14" width="240" height="180" rx="12" fill="none" stroke="#f59a2b" stroke-width="2"/>
+<rect x="270" y="62" width="200" height="84" rx="8" fill="#f59a2b"/>
+<text x="20" y="21" font-size="12" font-style="italic" opacity=".75">Other devices</text>
+<text x="80" y="49" text-anchor="middle">Pedals</text><text x="80" y="87" text-anchor="middle">Shifter</text><text x="80" y="125" text-anchor="middle">Handbrake</text><text x="80" y="163" text-anchor="middle">Buttonbox</text>
+<text x="370" y="36" text-anchor="middle" font-weight="600">proxy (CtrlMuxr)</text>
+<text x="370" y="100" text-anchor="middle" fill="#121212" font-weight="600">Main device (Wheel)</text><text x="370" y="120" text-anchor="middle" fill="#121212" font-size="11">+ axes and buttons of the others</text>
+<text x="578" y="99" text-anchor="middle">The game sees</text><text x="578" y="117" text-anchor="middle">one controller</text>
+<text x="370" y="216" text-anchor="middle" font-size="12" font-style="italic" opacity=".75">Force feedback (FFB) stays on the main device</text>
+</g></svg>
+<p>The settings live in the game folder in <code>dinput_proxy.ini</code>. The app writes it, and a running game picks up most changes in about half a second. Only some settings (for example hidden devices and <code>[Caps]</code>) need a game restart.</p>
+
+<h2 id="start">3. Quick start</h2>
+<ol>
+<li><b>Step 1 – Add game…</b> (bottom left): pick the game's .exe. The app detects how the game reads controllers and installs the right proxy. Choose your <b>wheel</b>, the controller with force feedback (FFB): the game sees only this one, and the other controllers (pedals, shifter) are hidden from the game and merged into it. The choice cannot be changed later in the app: to use another controller, uninstall the proxy with its settings (<i>Uninstall proxy…</i>, then <i>Remove from list</i> and answer <i>Yes</i>) and add the game again.</li>
+<li><b>Step 2 – Devices</b> tab: press a button and name it, move an axis and name it (e.g. THROTTLE, BRAKE, CLUTCH, HANDBRAKE, GEAR UP). The names can be anything and show on the other tabs.</li>
+<li><b>Step 3 – Virtual device</b> tab: choose a <i>Ready-made layout</i> and press <i>Apply layout</i>, or choose a <i>Source axis</i> by hand for each axis the game sees (X, Y, Z…). A good start: wheel on X, throttle on Y, brake on Z, clutch on Rx (all <i>Direct</i>). Unused axes: <i>(no mapping)</i>. If your names do not tell the throttle and the brake, the app asks which axis is which. The <i>Game sees</i> bars show the result even without the game (preview).</li>
+<li><b>Buttons</b> tab: press <i>Map the buttons you have named, with the same numbers</i>. The gear buttons and the others become buttons of the wheel. Only connected devices are included: a device whose names are remembered but which is not connected now (and is not already used by this game) is skipped, and the message names it. A game button can have several source buttons: it is pressed when any of them is.</li>
+<li>If the game is running, changes are saved at once. Otherwise they are a draft until you press <b>Save</b>.</li>
+<li>Start the game and <b>map the controls in the game's own menu</b>. Press every pedal and button when the game asks.</li>
+<li>Close the game and press <b>Analyse last session…</b>. The button glows orange when the log shows something worth looking at. It reports what it found and suggests what to try if something did not map.</li>
+<li>If the game is 32-bit and force feedback is missing: run <i>Exclusive access test…</i> (see section 6).</li>
+</ol>
+<p>The app also has a <b>Getting started</b> guide with the same steps. It stays visible until you have saved for the first time (<i>Hide this guide</i> hides it).</p>
+
+<h2 id="tabs">4. The tabs</h2>
+<dl>
+<dt>Devices</dt><dd>All connected controllers live: axes as bars with values, the button grid (green = pressed). Here you name axes and buttons: move an axis or press a button and type a name for it in the field next to it. It also shows which axis moved last.</dd>
+<dt>Virtual device</dt><dd>The axes of the controller the game sees (X, Y, Z, Rx, Ry, Rz, S0, S1, on the left of each row) and their <i>Source axis</i>. The <i>Game sees</i> part (&rarr; X and the bar) shows what the game gets: the real value while the game runs, otherwise a preview calculated from your devices with the same rules as the proxy (the <i>Tuning</i> option "lead" is not included). A grey row = the axis stays at the centre (no mapping, <i>Mask</i> or <i>Digital</i>). A <i>Ready-made layout</i> fills the table: the named axes straight through (the default), a combined pedal axis or separate half axes; then press <i>Apply layout</i>. The layout finds the throttle, brake, clutch and handbrake from the axis names (e.g. throttle, gas, brake, brk); if the names are not recognised, it asks which axis is which. If the game needs a particular wheel (Logitech, MOMO, SideWinder), choose it as the <i>Identity</i> on the Advanced tab.</dd>
+<dt>Buttons</dt><dd>Buttons of other devices as buttons of the game: <i>Source button</i> &rarr; <i>Game button</i> (B1, B2, …, B32, up to 48 rows; the number of rows shown can be set to 8, 16, 32 or 48 for the game you are editing; the next game starts at 8, or more if its rows need them). A game button can have several sources (e.g. gear up from two buttons): it is pressed when any of them is. <br><br> The source list shows only as many buttons as the device has (at most 32, the most the proxy reads); the buttons you have named and the ones already mapped are always listed, and the switch <i>Only buttons I have named</i> shortens the list to them. A device that is not connected is shown in red with "(not connected)": its settings can still be edited, but the game gets no values from it until it is plugged in (press <i>Refresh</i> on the Devices tab). The <i>Game sees</i> box on the right turns green while the game button is pressed. An axis that works as a button (handbrake) is made on the Virtual device tab with Mode <i>Digital</i>. <i>Clear all</i> empties the table (the Digital axes on the Virtual device tab stay).<p><b>A game button that is the target of a row (or of a Digital axis) gets its value only from its sources:</b> the wheel's own button with the same number no longer reaches the game. A wheel button that is not mapped anywhere passes through to the game as it is. To keep a wheel button working too, add a row with the wheel's own button as an extra source (e.g. Moza B2 &rarr; B2).<br><br> A small orange <b>!</b> appears when a Buttons row and a Digital axis use the same game button.</p></dd>
+<dt>Tuning</dt><dd>How one axis feels: dead zone (dz), curve (expo), gain, anti-deadzone (adz), lag cancel (lead) and the centre point. Each row has a <i>Reset</i> button.</dd>
+<dt>Advanced</dt><dd>Settings for games that do not behave normally: button count limit (MaxButtons), hiding capability flags (ClearFlags), ignoring the game's own dead zone, the exclusive-access fallback, strength sent as magnitude (GainAsMagnitude), force feedback strength (Boost), the identity the wheel reports (Logitech) and the device type. These are fixes for problem situations: if the game works, change nothing. Each setting has a short explanation, and the ? (hover or click) opens a longer one and tells whether the setting takes effect at once or needs a game restart.</dd>
+<dt>INI (text)</dt><dd>The settings file as it is. Edit by hand if you know what you are doing.</dd>
+<dt>Log</dt><dd>The proxy's log of a game session. You can scroll it while the game runs: it does not jump to the end if you have scrolled up.</dd>
+</dl>
+<p>Buttons on the left: <b>Add game…</b>, <b>Help (F1)</b>, <b>Uninstall proxy…</b> (removes the proxy from the game folder; the settings stay stored; when the proxy is not there the button is <b>Install proxy…</b>) and <b>Remove from list</b>. In the top bar: <b>Saves and backups…</b>, <b>Exclusive access test…</b> and <b>Undo last save</b>.</p>
+
+<h2 id="modes">5. Axis modes</h2>
+<table>
+<tr><th>Mode</th><th>What it does</th><th>Use when</th></tr>
+<tr><td>Direct</td><td>The source is passed on as it is. Pedal: rest = minimum, fully pressed = maximum.</td><td>The game accepts a single pedal axis. Start here.</td></tr>
+<tr><td>Half axis +</td><td>Rest in the centre, fully pressed = maximum.</td><td>The game reads an axis minimum as "pressed", or you want each pedal on its own axis.</td></tr>
+<tr><td>Half axis &minus;</td><td>Rest in the centre, fully pressed = minimum.</td><td>As above, in the other direction.</td></tr>
+<tr><td>Split: upper / lower half</td><td>The upper or lower half of the source is stretched to the full range.</td><td>One centred axis (e.g. a combined pedal axis) is to be split in two. <b>Not for separate pedal axes.</b></td></tr>
+<tr><td>Combine two axes</td><td>Throttle and brake on one axis: throttle pulls towards the minimum, brake towards the maximum, rest in the centre.</td><td>The game expects a single pedal axis ("Logitech style").</td></tr>
+<tr><td>Mask (hold at centre)</td><td>The game always gets the centre value. Same as choosing <i>(no mapping)</i>.</td><td>Unused or static axes of a device that would otherwise look "pressed" to the game.</td></tr>
+<tr><td>Digital: axis &rarr; button</td><td>The axis works as a button: pressed when the axis passes the point you choose.</td><td>Handbrake, when an old game does not take it as an axis.</td></tr>
+</table>
+<p><b>Invert</b> reverses the direction. In <i>Combine two axes</i> it swaps the throttle and brake halves as a whole (the pedals cannot be reversed one by one). A masked axis does not move in the game's menu, so mask only when everything else is mapped.</p>
+
+<h3>Example: wheel, pedals and shifter as one controller</h3>
+<p style="max-width:none"><img src="images/mapexample1eng.png" alt="Example table of the Virtual device tab: X steering, Y combined throttle and brake, Z hidden, Rx reversed clutch, Ry handbrake as a digital button"></p>
+<ul>
+<li><b>X</b> – Steering straight to the game's axis X.</li>
+<li><b>Y</b> – Brake and throttle axes combined on the game's axis Y (<i>Combine two axes</i>).</li>
+<li><b>Z</b> – The game's axis Z is hidden (<i>Mask</i>): the game always gets the centre value from it.</li>
+<li><b>Rx</b> – Clutch axis reversed on the game's axis Rx (<i>Invert</i> ticked).</li>
+<li><b>Ry</b> – Handbrake axis turned into a digital button B5 for the game (<i>Digital: axis &rarr; button</i>; the button is pressed when the axis passes 50 %).</li>
+</ul>
+<p>An orange exclamation mark <img src="images/exclamation.png" alt="Exclamation mark!" style="height:1.2em; vertical-align:text-bottom; margin:0 2px; border:none; border-radius:0"> means that button B5 is already mapped to another function on the Buttons tab.</p>
+<h3>Making the game see a known wheel (Identity)</h3>
+<p>Some games only know certain wheels and give them proper default controls. On the Advanced tab you can make your wheel report itself as a Logitech Driving Force Pro, a Logitech MOMO Racing or a Microsoft SideWinder Force Feedback Wheel. This changes only the name and ID the game sees: the axes (Virtual device tab) and the buttons (Buttons tab) stay as you set them, and you can limit the button count with MaxButtons. Identity and MaxButtons need a game restart.</p>
+<p>The Driving Force Pro ID is a guess; the MOMO Racing ID (<code>046D:CA03</code>) was read from a real wheel and the SideWinder ID (<code>045E:0034</code>) comes from a hardware database (one report). Not every game accepts them.</p>
+<p>The wheel models on the Identity list (box pictures):</p>
+<div style="display:flex;flex-wrap:wrap;gap:14px;max-width:none;margin:8px 0"><figure style="margin:0;width:230px"><img src="images/Logitech_DFP.jpg" alt="Logitech Driving Force Pro" style="width:230px"><figcaption style="color:var(--mut);font-size:90%">Logitech Driving Force Pro</figcaption></figure><figure style="margin:0;width:230px"><img src="images/Logitech_MOMO.jpg" alt="Logitech MOMO Racing Force Feedback Wheel" style="width:230px"><figcaption style="color:var(--mut);font-size:90%">Logitech MOMO Racing Force Feedback Wheel</figcaption></figure><figure style="margin:0;width:230px"><img src="images/MS_Sidewinder.png" alt="Microsoft SideWinder Force Feedback Wheel" style="width:230px"><figcaption style="color:var(--mut);font-size:90%">Microsoft SideWinder Force Feedback Wheel</figcaption></figure></div>
+<h2 id="problems">6. If the game does not accept a controller or an axis</h2>
+<p>An axis or button does not map in the game's menu although the log shows the values moving? Try in this order (<b>Analyse last session…</b> suggests the same):</p>
+<ol>
+<li><b>Another game axis.</b> Move the pedal to a different axis (e.g. Z &rarr; Rx). Some games do not take a certain axis for a certain job.</li>
+<li><b>Another Mode.</b> Direct &harr; Half axis +.</li>
+<li><b>A combined pedal axis</b> for throttle and brake (Combine).</li>
+<li><b>Handbrake as a button</b> (Digital) if the game does not take it as an analogue axis.</li>
+<li><b>Button number.</b> Try another number. Low numbers generally work better than high ones. Avoid the buttons the wheel itself has: give the mapped buttons numbers the wheel does not use.</li>
+<li>If nothing helps: <code>[Caps] MaxButtons=12</code> and <code>ClearFlags=A</code> on the INI tab.</li>
+</ol>
+<div class="box"><b>Important while mapping:</b> keep the wheel centred and the pedals released while the game waits for a new binding. If a pedal is already pressed, the game may read that as its rest state. If the game has no such setting (e.g. a clutch), there is nothing to map.</div>
+<h3>"This game cannot be handled automatically"</h3>
+<p><b>Add game…</b> looks at which controller interface the game program imports and picks the proxy DLL to match:</p>
+<table>
+<tr><th>The game uses</th><th>Proxy used</th></tr>
+<tr><td>DirectInput 1–7 (<code>DINPUT.dll</code>)</td><td><code>dinput.dll</code></td></tr>
+<tr><td>DirectInput 8 (<code>DINPUT8.dll</code>)</td><td><code>dinput8.dll</code></td></tr>
+<tr><td>only winmm (<code>joyGetPosEx</code>), and the game also imports <code>DINPUT.dll</code> or <code>MSACM32.dll</code></td><td><code>dinput.dll</code> or <code>msacm32.dll</code></td></tr>
+</table>
+<p>If the game imports none of these, the app reports that it cannot handle the game automatically. The most common case is an old game that reads the joystick through winmm only and loads neither <code>DINPUT.dll</code> nor <code>MSACM32.dll</code>: the proxy has no way to get loaded, so such a game is not supported. Some versions of the same game differ: a patched version may use DirectInput where the original uses only winmm. Controller input done in the game's own DLL files (an engine DLL) is detected too, if the DLL is in the game folder.</p>
+<h3>No force feedback, or the wheel pulls to one side</h3>
+<p>If the wheel pulls to one side with full force (for example in the Colin McRae Rally games right at the start of a stage or after a crash), try the <b>Advanced</b> tab switch <i>Strength as magnitude (GainAsMagnitude)</i> and restart the game. Some wheels (e.g. the Moza R9) ignore gain changes of an effect that is already playing, and the switch sends the strength as the magnitude. If the pull is still uneven (stronger to one side), also try <i>Block the sine effect (BlockSine)</i>. In Colin McRae Rally (Moza R9) it clearly improved the symmetry of the forces; the price is that the engine and road vibration disappear. For the rest, see below.</p>
+<p>If the game's force feedback (FFB) does not work, run <i>Exclusive access test…</i> first. Once, a running Steam client stopped 32-bit games from getting the wheel exclusively; closing Steam completely fixed it. The cause was not found and the block has not recurred: later tests with Steam running gave exclusive access both with Steam Input off and with it on for generic, Xbox and Switch Pro controllers. <b>If the test fails</b> and Steam is running, first turn off <i>Steam → Settings → Controller → Advanced Settings → Enable Steam Input for …</i>; if that is not enough, close Steam completely from the background (tray icon → Exit) and test again.</p>
+<p><b>Note:</b> Steam can change how controllers behave: Steam Input can remap, emulate or take over controllers, also per game. If a game launched from Steam acts oddly with the controller, check <i>Steam → Settings → Controller</i> and the game's <i>Properties → Controller</i>. The exclusive access tests gave the same result with these settings on and off.</p>
+<h3>Reading the log</h3>
+<p>The <b>Log</b> tab (and <code>dinput_&lt;number&gt;.log</code> in the game folder) shows what the proxy did during a game session. The lines worth looking at:</p>
+<ul>
+<li><code>Config: …</code> – the settings the proxy read when the game started (hidden devices, FFB options, mappings, identity). If a line you expect is missing, the setting was not read: some need a game restart.</li>
+<li><code>Loaded real …\dinput.dll</code> and <code>DirectInputCreateA ver=700</code> – the proxy loaded Windows' own library and the game asked for DirectInput (700 = version 7, 500 = version 5).</li>
+<li><code>winmm IAT hooks in game module: joyGetPosEx=1</code> – for a game that reads the joystick through winmm: 1 means the proxy attached to that call, 0 means it did not.</li>
+<li><code>Enum: … -&gt; hidden from game</code> – the devices the game was not shown. Your wheel should be listed without that mark.</li>
+<li><code>SetDataFormat … dataSize=80</code> – how the game wants the controller data (80 = the common format, 272 = the larger one with 128 buttons). <code>SetProperty</code> lines show the axis range and dead zone the game set.</li>
+<li><code>GetCapabilities … FFB=yes</code> – whether the wheel reports force feedback, and how many buttons the game was told (for example <code>128 -&gt; 8</code> when MaxButtons limits it).</li>
+<li><code>CreateEffect</code> – the game created force-feedback effects. No such lines in a game that should have FFB points to missing exclusive access.</li>
+<li>The proxy writes an <code>Acquire</code> line only when the result changes; repeats are counted (<code>(repeated 500 more times)</code>). If <code>hr=80070005</code> appears for a short while and <code>hr=0</code> follows, the game window was probably not in the foreground (e.g. Alt+Tab); the analysis then only gives a short note. <code>Acquire … hr=0</code> means the game got the device; other values are not always errors, because games try several times. <code>hr=80070005</code> (a hexadecimal error code) means access was denied: run <b>Exclusive access test…</b>. Lines with <code>fallback level</code> or <code>upgrade level</code> show the proxy switching to a gentler access mode and trying exclusive access again (the AutoCoop fallback on the Advanced tab).</li>
+</ul>
+<p><b>When the proxy logs.</b> The proxy logs only while CtrlMuxr is running, so a finished setup does not slow the game down. Start CtrlMuxr <i>before</i> the game, or the first lines (<code>Config:</code>, <code>CreateDevice</code>) are missing. To log a game without CtrlMuxr, turn on <i>Log also when CtrlMuxr is closed</i> (the checkbox under <i>Analyse last session…</i>) for it. Problems (failed calls, a controller that is not found, a bad INI line) are always kept: in the log, or, when logging is off, in <code>dinput_errors.log</code> in the game folder (at most 256 kB). A game that calls something very often is logged at most about 200 lines a second; the log then says <code>(N lines left out: more than 200 per second)</code>. Lines starting with <code>ERROR</code> are the problems; when a problem ends (a device comes back, <code>Acquire</code> works again) that is kept too.</p>
+<p>The <b>Analyse last session…</b> window reads the same log and summarises it; use the log yourself when the analysis finds nothing.</p>
+<h3>What the analysis can and cannot tell</h3>
+<p>The log and the <b>Analyse</b> window show what the proxy gave the game. They cannot see what the <i>game accepted</i>, so the questions in the window ("accepted / not accepted") are part of the analysis.</p>
+
+<h2 id="files">7. Where the files are</h2>
+<table>
+<tr><th>Place</th><th>Contents</th></tr>
+<tr><td>Game folder</td><td>The proxy DLL (<code>dinput.dll</code>, <code>dinput8.dll</code> or <code>msacm32.dll</code>), the working copy <code>dinput_proxy.ini</code> and the logs <code>dinput_*.log</code>.</td></tr>
+<tr><td>App <code>data\games\&lt;game&gt;\</code></td><td>The <b>master copy</b> of the settings, automatic backups (the 5 newest) and own saves. They stay even if the game folder is cleaned.</td></tr>
+<tr><td>App <code>data\proxy\</code></td><td>The proxy DLLs (x86 and x64), from which <i>Add game</i> copies the right one to the game folder.</td></tr>
+<tr><td>App <code>devices.ini</code>, <code>games.ini</code>, <code>settings.ini</code></td><td>Your names, the game list and the app settings (language, start guide).</td></tr>
+</table>
+<p><b>Synchronisation:</b> the copy in the game folder and the one in the app are kept equal. If only one changed, it wins. If both changed, the newer wins and the other is saved as a backup. Nothing is replaced without a backup.</p>
+<p><b>Updating the proxy:</b> if the app warns that the proxy file in the game folder is a different version from the app's own, press the <i>Update proxy</i> button next to the warning (the game must be closed). The settings are not changed.</p>
+<p><b>Removing the proxy:</b> <i>Uninstall proxy…</i> deletes the DLL and the working copy from the game folder and puts back the game's own DLL if the installer saved one. The settings stay in the app. While the game is still on the list, the same button becomes <i>Install proxy…</i>: it puts the proxy back and restores the latest settings. <i>Remove from list</i> removes the game from the list (<i>Delete</i> also deletes the stored settings, <i>Keep</i> keeps them; if you add the game again with the same name they come back). A folder that is already on the list is not added a second time; a settings file found in a folder that is not on the list is used with the main device it was made for.</p>
+
+<h3>Saves and backups</h3>
+<p><b>Saves and backups…</b> (top bar) lists the earlier states of the game's settings: <b>automatic backups</b> (the app makes them itself before changes and keeps the 5 newest) and <b>own saves</b> (you name and save them yourself; they stay until you delete them). Select one to see what restoring it would change compared with now. A restore works like any other edit: for a running game it is saved at once, otherwise it stays a draft until you press <b>Save</b>, and once saved it can be taken back with <b>Undo last save</b>. Each press steps back one save (the number in brackets shows how many are left, up to 30); the saves are remembered only until you switch game or close the app, so use the automatic backups for anything older. When something works, save it there as an <b>own save</b> (a named copy of a working state). If you switch to another game while you have an unsaved draft, the app asks whether to save, discard or cancel.</p>
+<h2 id="glossary">8. Glossary</h2>
+<dl>
+<dt>Proxy</dt><dd>A small DLL that CtrlMuxr installs in the game's folder. It sits between the game and Windows' DirectInput: it reads your real devices and gives the game one virtual controller. It does not change the game or Windows.</dd>
+<dt>DLL</dt><dd>A program file (library) that programs load. A DLL in the game folder is loaded before Windows' own.</dd>
+<dt>DirectInput / winmm</dt><dd>Two ways Windows lets games read controllers. The app detects which one the game uses and installs the right proxy.</dd>
+<dt>INI</dt><dd>A settings file in text form (<code>dinput_proxy.ini</code>).</dd>
+<dt>Axis</dt><dd>A continuous value (wheel angle, pedal). The virtual controller has eight: X, Y, Z, Rx, Ry, Rz, S0, S1.</dd>
+<dt>Mask</dt><dd>An axis whose value the game always gets as the centre value. Hides a device's unneeded axes.</dd>
+<dt>Half axis</dt><dd>A pedal whose rest position is in the centre of the axis.</dd>
+<dt>Split / Combine</dt><dd>Splitting one axis into two / merging two axes into one.</dd>
+<dt>Digital</dt><dd>An axis that works as a button once it passes a threshold (%).</dd>
+<dt>Own deadzone (dz)</dt><dd>The centre area where small movements are ignored.</dd>
+<dt>Curve / expo</dt><dd>Softens the response around the centre.</dd>
+<dt>Gain</dt><dd>Output multiplier (100 % = unchanged).</dd>
+<dt>Anti-deadzone (adz)</dt><dd>Cancels the game's own dead zone.</dd>
+<dt>Lag cancel (lead)</dt><dd>Cancels the game's input smoothing (sluggish feel).</dd>
+<dt>Centre point</dt><dd>The raw value the game takes as the middle (usually 32768).</dd>
+<dt>Preview</dt><dd>What <i>Game sees</i> shows while the game is not running: the app calculates the result from your devices with the same rules as the proxy.</dd>
+<dt>FFB</dt><dd>Force Feedback: the forces the game sends to the wheel.</dd>
+<dt>Exclusive access</dt><dd>The game's way of reserving the controller for itself. FFB requires it.</dd>
+<dt>Hexadecimal (hex)</dt><dd>A number system with the digits 0–9 and A–F, where A = 10 and F = 15. The app shows some numbers in hex: device IDs (VID:PID, e.g. <code>346E:0002</code>), error codes in the log (<code>80070005</code>) and the <code>ClearFlags</code> value (<code>A</code> = 10). Type them as shown, in hex.</dd>
+<dt>Own save</dt><dd>A named copy of a game's settings that you can return to later.</dd>
+</dl>
+</main>
+</div>
+</body>
+</html>

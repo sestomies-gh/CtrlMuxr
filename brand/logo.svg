@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Tausta -->
+  <circle cx="100" cy="100" r="100" fill="#121212"/>
+
+  <!-- Yhdistyvät viivat -->
+  <g fill="none"
+     stroke="#F59A2B"
+     stroke-width="14"
+     stroke-linecap="round"
+     stroke-linejoin="round">
+
+    <path d="M38 48 H70 C94 48 98 100 120 100"/>
+    <path d="M46 100 H120"/>
+    <path d="M38 152 H70 C94 152 98 100 120 100"/>
+
+    <path d="M120 100 H156"/>
+  </g>
+
+  <!-- Erilaiset syötteet -->
+  <g fill="#F59A2B">
+
+    <!-- Ympyrä -->
+    <circle cx="41" cy="48" r="14"/>
+
+    <!-- Neliö -->
+    <rect x="29" y="140" width="24" height="24"/>
+
+    <!-- X-merkki -->
+    <path d="M30 89 L52 111 M52 89 L30 111" fill="none" stroke="#F59A2B" stroke-width="11"/>
+  </g>
+
+  <!-- Yhdistetty ulostulo -->
+  <circle cx="171"
+          cy="100"
+          r="18"
+          fill="#121212"
+          stroke="#F59A2B"
+          stroke-width="7"/>
+
+  <circle cx="171"
+          cy="100"
+          r="10"
+          fill="#F59A2B"/>
+</svg>

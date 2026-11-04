@@ -1,0 +1,21 @@
+# build output (rebuild with app\build.bat and src\proxy\build.bat)
+out/
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+app/CtrlMuxr.exe
+app/devread.dll
+app/tools/*.exe
+app/data/
+
+# machine-specific and personal (created by the app on first run)
+app/settings.ini
+app/games.ini
+app/devices.ini
+*.log
+*.tmp
+
+# release output
+dist/

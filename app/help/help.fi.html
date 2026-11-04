@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CtrlMuxr – Ohje</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1d;--mut:#5c5c5c;--acc:#d9780f;--card:#f5f5f5;--line:#ddd;--code:#eee}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#e8e8e8;--mut:#a5a5a5;--acc:#f59a2b;--card:#202020;--line:#383838;--code:#262626}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+.wrap{display:flex;max-width:1100px;margin:0 auto}
+nav{width:240px;flex:none;position:sticky;top:0;align-self:flex-start;height:100vh;overflow:auto;padding:24px 16px;border-right:1px solid var(--line)}
+nav b{display:block;color:var(--acc);font-size:18px;margin-bottom:8px}
+nav a{display:block;color:var(--fg);text-decoration:none;padding:3px 0;font-size:14px}
+nav a:hover{color:var(--acc)}
+main{padding:24px 32px 80px;min-width:0}
+h1{margin:0 0 4px;font-size:28px}
+h1 span{color:var(--acc)}
+h1 svg.logo{margin:0 12px 0 0;vertical-align:middle}
+.tag{color:var(--mut);margin:0 0 24px}
+h2{margin:36px 0 8px;padding-top:8px;border-top:1px solid var(--line);font-size:21px}
+h3{margin:20px 0 4px;font-size:16px}
+p,li{max-width:70ch}
+code,.k{background:var(--code);padding:1px 5px;border-radius:4px;font:13px Consolas,monospace}
+.box{background:var(--card);border-left:4px solid var(--acc);padding:10px 14px;margin:12px 0;border-radius:4px;max-width:72ch}
+table{border-collapse:collapse;margin:10px 0;width:100%;max-width:820px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--card)}
+dt{font-weight:600;margin-top:10px}
+dd{margin:2px 0 0 0;color:var(--fg);max-width:70ch}
+svg{max-width:100%;height:auto;margin:10px 0}
+img{max-width:100%;height:auto;margin:6px 0;border:1px solid var(--line);border-radius:4px}
+.todo{border:1px dashed var(--line);color:var(--mut);padding:14px;margin:10px 0;border-radius:4px;max-width:72ch}
+@media (max-width:760px){.wrap{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+<b>CtrlMuxr</b>
+<a href="#mika">1. Mikä CtrlMuxr on</a>
+<a href="#toiminta">2. Miten se toimii</a>
+<a href="#aloitus">3. Pika-aloitus</a>
+<a href="#valilehdet">4. Välilehdet</a>
+<a href="#tilat">5. Akselien tilat</a>
+<a href="#ongelmat">6. Jos peli ei hyväksy</a>
+<a href="#tiedostot">7. Missä tiedostot ovat</a>
+<a href="#sanasto">8. Sanasto</a>
+</nav>
+<main>
+<h1><svg class="logo" width="56" height="56" role="img" aria-label="CtrlMuxr logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#121212"/><g fill="none" stroke="#F59A2B" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"><path d="M38 48 H70 C94 48 98 100 120 100"/><path d="M46 100 H120"/><path d="M38 152 H70 C94 152 98 100 120 100"/><path d="M120 100 H156"/></g><g fill="#F59A2B"><circle cx="41" cy="48" r="14"/><rect x="29" y="140" width="24" height="24"/><path d="M30 89 L52 111 M52 89 L30 111" fill="none" stroke="#F59A2B" stroke-width="11"/></g><circle cx="171" cy="100" r="18" fill="#121212" stroke="#F59A2B" stroke-width="7"/><circle cx="171" cy="100" r="10" fill="#F59A2B"/></svg><span>Ctrl</span>Muxr</h1>
+<p class="tag">Multiple Controllers &rarr; One Input &ndash; monta ohjainta, yksi syöte</p>
+
+<h2 id="mika">1. Mikä CtrlMuxr on</h2>
+<p>Monet vanhat (ja jotkut uudet) pelit osaavat käyttää vain <b>yhtä ohjainta</b>. Jos sinulla on erillinen ratti, polkimet ja vaihteenvaihtaja, peli ei yleensä salli niiden yhdistämistä: valitsit pelin valikossa ratin, vaihteenvaihtaja jää käyttämättä.</p>
+<p>CtrlMuxr yhdistää laitteesi niin, että peli näkee <b>yhden ohjaimen</b>, jolla on kaikki sinun tarvitsemasi akselit ja napit.<br><br> Voit myös päättää, miten akselit muunnetaan (esimerkiksi kaasu ja jarru samalle akselille tai jarru omalle akselilleen) ja mitä nappeja peli näkee.</p>
+<div class="box">Sovellus ei asenna ajureita eikä muuta Windowsia. Kaikki tapahtuu pelin omassa kansiossa, ja muutokset voi poistaa yhdellä painikkeella (<i>Poista proxy…</i>).</div>
+
+<h2 id="toiminta">2. Miten se toimii</h2>
+<p>Peli hakee ohjaimet Windowsin <b>DirectInput</b>-ohjelmakirjastosta (DLL-tiedostosta). CtrlMuxr asentaa pelin kansioon oman pienen DLL-tiedoston, jota kutsutaan tässä <b>proxyksi</b>. Peli lataa sen Windowsin omien DLL-tiedostojen tilalle, ja proxy tekee kolme asiaa:</p>
+<ol>
+<li><b>Lukee oikeat laitteesi</b> (kaksi tai useampi, esim. ratti, polkimet, vaihteenvaihtaja, käsijarru, buttonbox; yhteensä enintään 9 laitetta).</li>
+<li><b>Yhdistää ne pääohjaimeen</b> (rattiin) sinun asetustesi mukaan: niiden akselit ja napit tulevat ratin akseleiksi ja napeiksi, joten peli näkee yhden ohjaimen.</li>
+<li><b>Antaa pelille vain pääohjaimen</b> (muut laitteet piilotetaan pelin näkyvistä). Voimapalaute (FFB) kulkee edelleen ratille. Pääohjaimen valitset <i>Lisää peli…</i> -toiminnolla (kohta 3, vaihe 1).</li>
+</ol>
+<svg viewBox="0 0 640 232" role="img" aria-label="Muut laitteet (esimerkiksi polkimet, vaihteenvaihtaja, käsijarru ja buttonbox) yhdistetään proxyn avulla pääohjaimeen eli rattiin; peli näkee yhden ohjaimen, rattiin">
+<g font-family="Segoe UI,Arial" font-size="13" fill="currentColor">
+<g fill="none" stroke="#f59a2b" stroke-width="2.5"><path d="M140 45 H200 C225 45 225 104 270 104"/><path d="M140 83 H200 C225 83 225 104 270 104"/><path d="M490 104 H522"/><path d="M510 94 L522 104 L510 114"/><path d="M258 94 L270 104 L258 114"/></g>
+<g fill="none" stroke="#f59a2b" stroke-width="2.5" stroke-dasharray="6 5"><path d="M140 121 H200 C225 121 225 104 270 104"/><path d="M140 159 H200 C225 159 225 104 270 104"/></g>
+<g fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"><rect x="20" y="30" width="120" height="30" rx="6"/><rect x="20" y="68" width="120" height="30" rx="6"/><rect x="20" y="106" width="120" height="30" rx="6" stroke-dasharray="6 5"/><rect x="20" y="144" width="120" height="30" rx="6" stroke-dasharray="6 5"/><rect x="522" y="76" width="112" height="56" rx="6"/></g>
+<rect x="250" y="14" width="240" height="180" rx="12" fill="none" stroke="#f59a2b" stroke-width="2"/>
+<rect x="270" y="62" width="200" height="84" rx="8" fill="#f59a2b"/>
+<text x="20" y="21" font-size="12" font-style="italic" opacity=".75">Muut laitteet</text>
+<text x="80" y="49" text-anchor="middle">Polkimet</text><text x="80" y="87" text-anchor="middle">Vaihteenvaihtaja</text><text x="80" y="125" text-anchor="middle">Käsijarru</text><text x="80" y="163" text-anchor="middle">Buttonbox</text>
+<text x="370" y="36" text-anchor="middle" font-weight="600">proxy (CtrlMuxr)</text>
+<text x="370" y="100" text-anchor="middle" fill="#121212" font-weight="600">Pääohjain (ratti)</text><text x="370" y="120" text-anchor="middle" fill="#121212" font-size="11">+ muiden akselit ja napit</text>
+<text x="578" y="99" text-anchor="middle">Peli näkee</text><text x="578" y="117" text-anchor="middle">yhden ohjaimen</text>
+<text x="370" y="216" text-anchor="middle" font-size="12" font-style="italic" opacity=".75">Voimapalaute (FFB) pysyy pääohjaimella</text>
+</g></svg>
+<p>Asetukset ovat pelin kansiossa tiedostossa <code>dinput_proxy.ini</code>. Sovellus kirjoittaa sitä, ja käynnissä oleva peli ottaa useimmat muutokset käyttöön noin puolessa sekunnissa. Vain osa asetuksista (esimerkiksi piilotetut laitteet ja <code>[Caps]</code>) vaatii pelin uudelleenkäynnistyksen.</p>
+
+<h2 id="aloitus">3. Pika-aloitus</h2>
+<ol>
+<li><b>Vaihe 1 – Lisää peli…</b> (vasemmalla alhaalla): valitse pelin .exe. Sovellus tunnistaa, kuinka peli lukee ohjaimia, ja asentaa oikean proxyn. Valitse <b>ratti</b>, eli ohjain, jossa on voimapalaute (FFB): peli näkee vain sen, ja muut ohjaimet (polkimet, vaihteenvaihtaja) piilotetaan pelistä ja yhdistetään siihen. Valintaa ei voi vaihtaa myöhemmin sovelluksessa: jos haluat toisen ohjaimen, poista proxy asetuksineen (<i>Poista proxy…</i>, sitten <i>Poista listalta</i> ja vastaa <i>Kyllä</i>) ja lisää peli uudelleen.</li>
+<li><b>Vaihe 2 – Laitteet</b>-välilehti: paina nappia ja nimeä se, liikuta akselia ja kirjoita sille nimi (esim. KAASU, JARRU, KYTKIN, KÄSIJARRU, VAIHDE YLÖS). Nimet voivat olla mitä tahansa, ja ne näkyvät muilla välilehdillä.</li>
+<li><b>Vaihe 3 – Virtuaalilaite</b>-välilehti: valitse <i>Valmis asettelu</i> ja paina <i>Käytä asettelu</i>, tai valitse jokaiselle pelin akselille (X, Y, Z…) <i>Lähdeakseli</i> käsin. Hyvä alku: ratti X:lle, kaasu Y:lle, jarru Z:lle, kytkin Rx:lle (kaikki <i>Suora</i>). Käyttämättömät akselit: <i>(ei mappausta)</i>. Jos nimistäsi ei tunnisteta kaasua ja jarrua, sovellus kysyy, mikä akseli on mikä. <i>Peli näkee</i> -palkit näyttävät tuloksen jo ilman peliä (esikatselu).</li>
+<li><b>Napit</b>-välilehti: paina <i>Mappaa nimeämäsi napit samoilla numeroilla</i>. Vaihteet ja muut napit siirtyvät ratin napeiksi. Vain kytketyt laitteet otetaan mukaan: jos laitteen nimet ovat tallessa, mutta laite ei ole nyt kytkettynä (eikä peli sitä jo käytä), se ohitetaan ja ilmoitus kertoo sen. Samaan pelin nappiin voi mapata useita lähdenappeja: nappi on painettu, kun mikä tahansa niistä on painettu.</li>
+<li>Jos peli on käynnissä, muutokset tallentuvat heti. Muuten ne ovat luonnoksia, kunnes painat <b>Tallenna</b>.</li>
+<li>Käynnistä peli ja <b>mappaa ohjaimet pelin omassa valikossa</b>. Paina jokaista poljinta ja nappia, kun peli pyytää.</li>
+<li>Sulje peli ja paina <b>Analysoi viimeisin pelikerta…</b>. Painike hehkuu oranssina, kun lokissa on jotain, mikä kannattaa katsoa. Se kertoo havainnot ja ehdottaa, mitä kokeilla, jos jokin ei mappautunut.</li>
+<li>Jos peli on 32-bittinen ja voimapalaute puuttuu: aja <i>Yksinoikeustesti…</i> (ks. kohta 6).</li>
+</ol>
+<p>Sovelluksessa on myös <b>Aloita tästä</b> -opaste, jossa on samat vaiheet. Se pysyy näkyvissä, kunnes olet tallentanut ensimmäisen kerran (<i>Piilota opaste</i> piilottaa sen).</p>
+
+<h2 id="valilehdet">4. Välilehdet</h2>
+<dl>
+<dt>Laitteet</dt><dd>Näyttää kaikki kytketyt ohjaimet livenä: akselit palkkeina ja arvoina, nappiruudukko (vihreä = painettu). Tässä annat akseleille ja napeille nimet: liikuta akselia tai paina nappia ja kirjoita sille nimi viereiseen kenttään. Samalla välilehdellä näet, mikä akseli liikkui viimeksi.</dd>
+<dt>Virtuaalilaite</dt><dd>Pelille näkyvän ohjaimen akselit (X, Y, Z, Rx, Ry, Rz, S0, S1, rivin vasemmassa reunassa) ja niiden <i>Lähdeakseli</i>. <i>Peli näkee</i> -osa (&rarr; X ja palkki) näyttää, mitä peli saa: pelin ollessa käynnissä oikean arvon ja muulloin esikatselun, joka lasketaan laitteistasi samoilla säännöillä kuin proxy (<i>Säädöt</i>-välilehden viiveen kumous ei ole mukana). Harmaa rivi = akseli pysyy keskellä (ei mappausta, <i>Peitä</i> tai <i>Digital</i>). <i>Valmis asettelu</i> täyttää taulukon: nimetyt akselit sellaisenaan (oletus), yhdistetty pedaaliakseli tai erilliset puoliakselit; paina sen jälkeen <i>Käytä asettelu</i>. Asettelu tunnistaa kaasun, jarrun, kytkimen ja käsijarrun akselien nimestä (esim. kaasu, gas, jarru, brk); jos nimiä ei tunnisteta, se kysyy, mikä akseli on mikä. Jos peli vaatii tietyn ratin (Logitech, MOMO, SideWinder), valitse se <i>Identityksi</i> Lisäasetukset-välilehdellä.</dd>
+<dt>Napit</dt><dd>Muiden laitteiden napit pelin napeiksi: <i>Lähdenappi</i> &rarr; <i>Pelin nappi</i> (B1, B2, …, B32, enintään 48 riviä; näytettävien rivien määrän voi valita: 8, 16, 32 tai 48 muokattavalle pelille; seuraava peli alkaa 8 rivistä tai useammasta, jos sen rivit sitä vaativat). Samalle pelin napille voi antaa useita lähteitä (esim. vaihde ylös kahdesta napista): se on painettu, kun mikä tahansa niistä on painettu. <br><br> Lähdelistalla on vain niin monta nappia kuin laitteessa on (enintään 32, eli kaikki, mitä proxy lukee); nimeämäsi ja jo mapatut napit ovat aina listalla, ja valinta <i>Vain nimeämäni napit</i> lyhentää listan niihin. Laite, jota ei ole kytketty, näkyy punaisena ja tekstillä "(ei kytketty)": sen asetuksia voi yhä muokata, mutta peli ei saa siitä arvoja ennen kuin se kytketään (paina Laitteet-välilehdellä <i>Refresh</i>). Oikealla oleva <i>Peli näkee</i> -laatikko muuttuu vihreäksi, kun pelin nappi on painettu. Akseli, joka toimii nappina (käsijarru), tehdään Virtuaalilaite-välilehdellä tilalla <i>Digital</i>. <i>Tyhjennä kaikki</i> tyhjentää taulukon (Virtuaalilaite-välilehden Digital-akselit säilyvät).<p><b>Pelin nappi, joka on rivin (tai Digital-akselin) kohteena, saa arvonsa vain lähteistään:</b> ratin oma nappi samalla numerolla ei enää pääse peliin. Ratin nappi, jota ei ole mapattu mihinkään, kulkee pelille sellaisenaan. Jos haluat ratin oman napin toimivan myös, lisää rivi, jossa ratin oma nappi on ylimääräinen lähde (esim. Moza B2 &rarr; B2).<br><br>  Pieni oranssi <b>!</b> ilmestyy, kun Napit-rivi ja Digital-akseli käyttävät samaa pelin nappia.</p></dd>
+<dt>Säädöt</dt><dd>Yhden akselin tuntuma: kuollut alue (dz), käyrä (expo), vahvistus (gain), anti-deadzone (adz), viiveen kumous (lead) ja keskipiste. Jokaisella rivillä on <i>Nollaa</i>-painike.</dd>
+<dt>Lisäasetukset</dt><dd>Asetuksia peleille, jotka eivät käyttäydy normaalisti: nappimäärän raja (MaxButtons), ominaisuuslippujen piilotus (ClearFlags), pelin oman kuolleen alueen ohitus, yksinoikeuden varajärjestely, voiman lähetys magnitudina (GainAsMagnitude), voimapalautteen voimakkuus (Boost), ratin ilmoittama identiteetti (Logitech) ja laitetyyppi. Nämä ovat korjauksia ongelmatilanteisiin: jos peli toimii, älä muuta mitään. Jokaisella asetuksella on lyhyt selitys, ja ?-merkistä (hiiri päälle tai napsautus) aukeaa pidempi selitys sekä tieto siitä, tuleeko asetus voimaan heti vai vaatiiko se pelin uudelleenkäynnistyksen.</dd>
+<dt>INI (teksti)</dt><dd>Asetustiedosto sellaisenaan. Voit muokata käsin, jos tiedät mitä teet.</dd>
+<dt>Loki</dt><dd>Proxyn kirjoittama loki pelikerrasta. Voit vierittää sitä pelin ollessa käynnissä: se ei hyppää loppuun, jos olet vierittänyt ylös.</dd>
+</dl>
+<p>Vasemman reunan painikkeet: <b>Lisää peli…</b>, <b>Ohje (F1)</b>, <b>Poista proxy…</b> (poistaa proxyn pelin kansiosta; asetukset jäävät talteen; kun proxya ei ole, painike on <b>Asenna proxy…</b>) ja <b>Poista listalta</b>. Yläpalkissa: <b>Tallennukset ja varmistukset…</b>, <b>Yksinoikeustesti…</b> ja <b>Kumoa viimeisin tallennus</b>.</p>
+
+<h2 id="tilat">5. Akselien tilat</h2>
+<table>
+<tr><th>Tila</th><th>Mitä se tekee</th><th>Käytä, kun</th></tr>
+<tr><td>Suora</td><td>Lähde menee sellaisenaan. Poljin: lepo = minimi, pohjassa = maksimi.</td><td>Peli ottaa yksittäisen poljinakselin. Aloita tästä.</td></tr>
+<tr><td>Puoliakseli +</td><td>Lepo keskellä, pohjassa maksimi.</td><td>Peli tulkitsee akselin minimin "painetuksi", tai haluat jokaiselle polkimelle oman akselin.</td></tr>
+<tr><td>Puoliakseli &minus;</td><td>Lepo keskellä, pohjassa minimi.</td><td>Kuten yllä, vastakkaiseen suuntaan.</td></tr>
+<tr><td>Jaa: yläpuolisko / alapuolisko</td><td>Lähteen ylä- tai alapuolisko levitetään koko alueelle.</td><td>Yksi keskitetty akseli (esim. yhdistetty poljin) halutaan jakaa kahdeksi. <b>Ei erillisille poljinakseleille.</b></td></tr>
+<tr><td>Yhdistä kaksi akselia</td><td>Kaasu ja jarru samalle akselille: kaasu vetää kohti minimiä, jarru kohti maksimia, lepo keskellä.</td><td>Peli odottaa yhtä poljinakselia ("Logitech-tyyli").</td></tr>
+<tr><td>Peitä (pidä keskellä)</td><td>Peli saa aina keskiarvon. Sama kuin valinta <i>(ei mappausta)</i>.</td><td>Laitteen turhat tai staattiset akselit, jotka muuten näyttäisivät pelille "painetuilta".</td></tr>
+<tr><td>Digital: akseli &rarr; nappi</td><td>Akseli toimii nappina: nappi on painettu, kun akseli ylittää valitsemasi kohdan.</td><td>Käsijarru, kun vanha peli ei ota sitä akselina.</td></tr>
+</table>
+<p><b>Käännä</b> kääntää suunnan. Tilassa <i>Yhdistä kaksi akselia</i> se vaihtaa kaasun ja jarrun puoliskot keskenään kokonaisuutena (polkimia ei voi kääntää erikseen). Peitetty akseli ei liiku pelin valikossa, joten peitä akseli vasta, kun olet mappannut kaiken muun.</p>
+
+<h3>Esimerkki: ratti, polkimet ja vaihteenvaihtaja yhdeksi ohjaimeksi</h3>
+<p style="max-width:none"><img src="images/mapexample1fi.png" alt="Virtuaalilaite-välilehden esimerkkitaulukko: X ohjaus, Y yhdistetty kaasu ja jarru, Z peitetty, Rx käännetty kytkin, Ry käsijarru digitaalisena nappina"></p>
+<ul>
+<li><b>X</b> – Ohjaus suoraan pelin akselille X.</li>
+<li><b>Y</b> – Jarru- ja kaasuakselit yhdistettynä pelin akselille Y (<i>Yhdistä kaksi akselia</i>).</li>
+<li><b>Z</b> – Pelin akseli Z on piilotettu (<i>Peitä</i>): peli saa siltä aina keskiarvon.</li>
+<li><b>Rx</b> – Kytkinakseli käännettynä pelin akselille Rx (<i>Käännä</i> valittuna).</li>
+<li><b>Ry</b> – Käsijarruakseli muutettu pelille digitaaliseksi napiksi B5 (<i>Digital: akseli &rarr; nappi</i>; nappi on painettu, kun akseli ylittää 50 %).</li>
+</ul>
+<p>Oranssi huutomerkki <img src="images/exclamation.png" alt="Huutomerkki!" style="height:1.2em; vertical-align:text-bottom; margin:0 2px; border:none; border-radius:0"> kertoo, että B5-nappi on jo mapattu Napit-välilehdellä toiseenkin toimintoon.</p>
+<h3>Pelin saaminen näkemään tunnettu ratti (Identity)</h3>
+<p>Jotkin pelit tuntevat vain tiettyjä rattia ja antavat niille kunnolliset oletusohjaukset. Lisäasetukset-välilehdellä voit asettaa ratin ilmoittamaan itsensä Logitech Driving Force Pro:ksi, Logitech MOMO Racingiksi tai Microsoft SideWinder Force Feedback Wheeliksi. Tämä vaihtaa vain nimen ja ID:n, jonka peli näkee: akselit (Virtuaalilaite-välilehti) ja napit (Napit-välilehti) pysyvät sellaisina kuin ne asetit, ja nappimäärän voi rajata MaxButtonsilla. Identity ja MaxButtons vaativat pelin uudelleenkäynnistyksen.</p>
+<p>Driving Force Pro -ID on arvaus; MOMO Racing -ID (<code>046D:CA03</code>) on luettu oikealta ratilta ja SideWinder-ID (<code>045E:0034</code>) laitetietokannasta (yksi raportti). Kaikki pelit eivät hyväksy niitä.</p>
+<p>Identity-listan rattimallit (kuvina pakkaukset):</p>
+<div style="display:flex;flex-wrap:wrap;gap:14px;max-width:none;margin:8px 0"><figure style="margin:0;width:230px"><img src="images/Logitech_DFP.jpg" alt="Logitech Driving Force Pro" style="width:230px"><figcaption style="color:var(--mut);font-size:90%">Logitech Driving Force Pro</figcaption></figure><figure style="margin:0;width:230px"><img src="images/Logitech_MOMO.jpg" alt="Logitech MOMO Racing Force Feedback Wheel" style="width:230px"><figcaption style="color:var(--mut);font-size:90%">Logitech MOMO Racing Force Feedback Wheel</figcaption></figure><figure style="margin:0;width:230px"><img src="images/MS_Sidewinder.png" alt="Microsoft SideWinder Force Feedback Wheel" style="width:230px"><figcaption style="color:var(--mut);font-size:90%">Microsoft SideWinder Force Feedback Wheel</figcaption></figure></div>
+<h2 id="ongelmat">6. Jos peli ei hyväksy ohjainta tai akselia</h2>
+<p>Jokin akseli tai nappi ei mappaudu pelin valikossa, vaikka lokissa arvot liikkuvat? Kokeile tässä järjestyksessä (<b>Analysoi viimeisin pelikerta…</b> ehdottaa samoja):</p>
+<ol>
+<li><b>Toinen pelin akseli.</b> Siirrä poljin toiselle akselille (esim. Z &rarr; Rx). Joskus peli ei ota tiettyä akselia tiettyyn tehtävään.</li>
+<li><b>Toinen tila.</b> Suora &harr; Puoliakseli +.</li>
+<li><b>Yhdistetty poljinakseli</b> kaasulle ja jarrulle (<i>Yhdistä kaksi akselia</i>).</li>
+<li><b>Käsijarru nappina</b> (Digital), jos peli ei ota sitä analogisena.</li>
+<li><b>Napin numero.</b> Kokeile toista numeroa. Matalat numerot toimivat yleensä paremmin kuin korkeat. Vältä ratin omia nappeja: anna mapatuille napeille numerot, joita ratti ei käytä.</li>
+<li>Jos mikään ei auta: <code>[Caps] MaxButtons=12</code> ja <code>ClearFlags=A</code> INI-välilehdellä.</li>
+</ol>
+<div class="box"><b>Tärkeää mappauksen aikana:</b> pidä ratti keskellä ja polkimet vapaina, kun peli odottaa uutta mappausta. Jos poljin on jo painettuna, peli voi lukea sen "painetuksi" lepotilaksi. Jos pelissä ei ole tiettyä asetusta (esim. kytkin), sitä ei tarvitse mapata.</div>
+<h3>"Tätä peliä ei voi käsitellä automaattisesti"</h3>
+<p><b>Lisää peli…</b> katsoo, mitä ohjainrajapintaa pelin ohjelma tuo, ja valitsee sen mukaan proxy-DLL:n:</p>
+<table>
+<tr><th>Peli käyttää</th><th>Käytettävä proxy</th></tr>
+<tr><td>DirectInput 1–7 (<code>DINPUT.dll</code>)</td><td><code>dinput.dll</code></td></tr>
+<tr><td>DirectInput 8 (<code>DINPUT8.dll</code>)</td><td><code>dinput8.dll</code></td></tr>
+<tr><td>vain winmm (<code>joyGetPosEx</code>), ja peli tuo myös <code>DINPUT.dll</code>:n tai <code>MSACM32.dll</code>:n</td><td><code>dinput.dll</code> tai <code>msacm32.dll</code></td></tr>
+</table>
+<p>Jos peli ei tuo mitään näistä, sovellus ilmoittaa, ettei se voi käsitellä peliä automaattisesti. Yleisin tapaus on vanha peli, joka lukee ohjainta vain winmm:n kautta eikä lataa <code>DINPUT.dll</code>:ää eikä <code>MSACM32.dll</code>:ää: proxylla ei ole keinoa tulla ladatuksi, joten tällaista peliä ei tueta. Saman pelin versiot voivat poiketa: paikattu versio voi käyttää DirectInputia, vaikka alkuperäinen käyttää vain winmm:ää. Pelin omissa DLL-tiedostoissa (esim. moottori-DLL) tehty ohjainluku tunnistetaan myös, jos DLL on pelin kansiossa.</p>
+<h3>Voimapalaute puuttuu tai ratti vetää yhteen suuntaan</h3>
+<p>Jos ratti vetää täydellä voimalla yhteen suuntaan (esimerkiksi Colin McRae Rally -peleissä heti pätkän alussa tai törmäyksen jälkeen), kokeile <b>Lisäasetukset</b>-välilehden kytkintä <i>Voima magnitudina (GainAsMagnitude)</i> ja käynnistä peli uudelleen. Jotkin ratit (esim. Moza R9) eivät noudata käynnissä olevan efektin gain-muutoksia, ja kytkin lähettää voimakkuuden magnitudina. Jos veto on yhä epäsymmetristä (enemmän yhteen suuntaan), kokeile lisäksi <i>Estä sini-efekti (BlockSine)</i>. Colin McRae Rallyssa (Moza R9) se paransi voimien symmetriaa selvästi; hintana moottorin ja tien tärinä poistuu. Muu: ks. alla.</p>
+<p>Jos pelin voimapalaute (FFB) ei toimi, aja ensin <i>Yksinoikeustesti…</i>. Kerran käynnissä oleva Steam-asiakas esti 32-bittisiä pelejä saamasta rattia yksinoikeudella; Steamin sulkeminen kokonaan korjasi asian. Syytä ei löytynyt, eikä esto ole toistunut: myöhemmissä testeissä yksinoikeus onnistui Steamin ollessa käynnissä sekä Steam Inputin ollessa pois että päällä (generic-, Xbox- ja Switch Pro -ohjaimet). <b>Jos testi epäonnistuu</b> ja Steam on käynnissä, ota ensin pois päältä <i>Steam → Settings → Controller → Advanced Settings → Enable Steam Input for …</i>; jos se ei riitä, sulje Steam kokonaan taustalta (tehtäväpalkin kuvake → Exit) ja testaa uudelleen.</p><p><b>Huomaa:</b> Steam voi muuttaa ohjainten käyttäytymistä: Steam Input voi uudelleenmäärittää, jäljitellä tai ottaa ohjaimia haltuunsa, myös pelikohtaisesti. Jos Steamistä käynnistetty peli käyttäytyy ohjaimella oudosti, tarkista <i>Steam → Settings → Controller</i> ja pelin <i>Properties → Controller</i>. Yksinoikeustestit antoivat saman tuloksen näillä asetuksilla päällä ja pois.</p>
+<h3>Lokin lukeminen</h3>
+<p><b>Loki</b>-välilehti (ja pelin kansion <code>dinput_&lt;numero&gt;.log</code>) näyttää, mitä proxy teki pelikerran aikana. Katsomisen arvoiset rivit:</p>
+<ul>
+<li><code>Config: …</code> – asetukset, jotka proxy luki pelin käynnistyessä (piilotetut laitteet, FFB-valinnat, mappaukset, identiteetti). Jos odottamaasi riviä ei ole, asetusta ei luettu: osa vaatii pelin uudelleenkäynnistyksen.</li>
+<li><code>Loaded real …\dinput.dll</code> ja <code>DirectInputCreateA ver=700</code> – proxy latasi Windowsin oman kirjaston ja peli pyysi DirectInputia (700 = versio 7, 500 = versio 5).</li>
+<li><code>winmm IAT hooks in game module: joyGetPosEx=1</code> – winmm:n kautta joystickia lukevalla pelillä: 1 = proxy kiinnittyi kutsuun, 0 = ei kiinnittynyt.</li>
+<li><code>Enum: … -&gt; hidden from game</code> – laitteet, joita pelille ei näytetty. Ratin pitäisi olla luettelossa ilman tätä merkintää.</li>
+<li><code>SetDataFormat … dataSize=80</code> – missä muodossa peli haluaa ohjaimen tiedot (80 = yleinen muoto, 272 = suurempi, jossa 128 nappia). <code>SetProperty</code>-rivit näyttävät pelin asettaman akselialueen ja kuolleen alueen.</li>
+<li><code>GetCapabilities … FFB=yes</code> – ilmoittaako ratti voimapalautteesta ja kuinka monta nappia pelille kerrottiin (esim. <code>128 -&gt; 8</code>, kun MaxButtons rajoittaa).</li>
+<li><code>CreateEffect</code> – peli loi voimapalauteefektejä. Jos näitä rivejä ei ole pelissä, jossa pitäisi olla FFB, yksinoikeus puuttuu.</li>
+<li>Proxy kirjaa <code>Acquire</code>-rivin vain, kun tulos muuttuu; toistot lasketaan (<code>(repeated 500 more times)</code>). Jos <code>hr=80070005</code> näkyy hetken ja sen jälkeen tulee <code>hr=0</code>, pelin ikkuna ei todennäköisesti ollut etualalla (esim. Alt+Tab); analyysi antaa silloin vain lyhyen huomautuksen. <code>Acquire … hr=0</code> tarkoittaa, että peli sai laitteen; muut arvot eivät aina ole virheitä, koska pelit yrittävät monta kertaa. <code>hr=80070005</code> (heksadesimaalimuotoinen virhekoodi) tarkoittaa käytön estoa: aja <b>Yksinoikeustesti…</b>. Rivit, joissa on <code>fallback level</code> tai <code>upgrade level</code>, näyttävät proxyn siirtyvän lempeämpään käyttötilaan ja yrittävän yksinoikeutta uudelleen (Lisäasetukset-välilehden AutoCoop-varatila).</li>
+</ul>
+<p><b>Milloin proxy lokittaa.</b> Proxy lokittaa vain, kun CtrlMuxr on käynnissä, joten valmis asetus ei hidasta peliä. Käynnistä CtrlMuxr <i>ennen</i> peliä, muuten ensimmäiset rivit (<code>Config:</code>, <code>CreateDevice</code>) puuttuvat. Jos haluat lokittaa pelin ilman CtrlMuxria, laita sille päälle <i>Lokita myös kun CtrlMuxr on kiinni</i> (valintaruutu <i>Analysoi viimeisin pelikerta…</i> -napin alla). Ongelmat (epäonnistuneet kutsut, ohjainta ei löydy, virheellinen INI-rivi) tallentuvat aina: lokiin tai, kun lokitus on pois, pelin kansion tiedostoon <code>dinput_errors.log</code> (enintään 256 kt). Peliä, joka kutsuu jotain hyvin tiheästi, lokitetaan enintään noin 200 riviä sekunnissa; loki kertoo silloin <code>(N lines left out: more than 200 per second)</code>. Rivit, joiden alussa on <code>ERROR</code>, ovat ongelmia; kun ongelma päättyy (laite palaa, <code>Acquire</code> toimii taas), sekin tallentuu.</p>
+<p><b>Analysoi viimeisin pelikerta…</b> -ikkuna lukee samaa lokia ja tekee yhteenvedon; lue lokia itse, kun analyysi ei löydä mitään.</p>
+<h3>Pelin kuvaus ei auta?</h3>
+<p>Lokinäkymä ja <b>Analysoi</b>-ikkuna kertovat, mitä proxy antoi pelille. Se ei näe, mitä <i>peli hyväksyi</i>, joten ikkunan kysymykset ("hyväksyi / ei hyväksynyt") ovat osa analyysiä.</p>
+
+<h2 id="tiedostot">7. Missä tiedostot ovat</h2>
+<table>
+<tr><th>Paikka</th><th>Sisältö</th></tr>
+<tr><td>Pelin kansio</td><td>Proxy-DLL (<code>dinput.dll</code>, <code>dinput8.dll</code> tai <code>msacm32.dll</code>), työkopio <code>dinput_proxy.ini</code> ja lokit <code>dinput_*.log</code>.</td></tr>
+<tr><td>Sovelluksen <code>data\games\&lt;peli&gt;\</code></td><td>Asetusten <b>pääkopio</b>, automaattiset varmistukset (5 uusinta) ja omat tallennukset. Säilyy, vaikka pelin kansio siivotaan.</td></tr>
+<tr><td>Sovelluksen <code>data\proxy\</code></td><td>Proxy-DLL:t (x86 ja x64), joista <i>Lisää peli</i> kopioi oikean pelin kansioon.</td></tr>
+<tr><td>Sovelluksen <code>devices.ini</code>, <code>games.ini</code>, <code>settings.ini</code></td><td>Antamasi nimet, pelilista sekä sovelluksen asetukset (kieli, aloitusopaste).</td></tr>
+</table>
+<p><b>Synkronointi:</b> pelin kansion ja sovelluksen kopio pidetään samana. Jos vain toinen on muuttunut, se voittaa. Jos molemmat, uudempi voittaa ja toinen tallentuu varmuuskopioksi. Mitään ei korvata ilman varmuuskopiota.</p>
+<p><b>Proxyn päivitys:</b> jos sovellus varoittaa, että pelikansion proxy-tiedosto on eri versio kuin sovelluksen oma, paina varoituksen vieressä olevaa <i>Päivitä proxy</i> -painiketta (pelin pitää olla suljettuna). Asetuksia ei muuteta.</p>
+<p><b>Proxyn poisto:</b> <i>Poista proxy…</i> poistaa DLL:n ja työkopion pelin kansiosta, ja palauttaa pelin oman DLL:n, jos asennus tallensi sellaisen. Asetukset jäävät sovellukseen. Kun peli on yhä listalla, sama painike muuttuu muotoon <i>Asenna proxy…</i>: se asentaa proxyn takaisin ja palauttaa viimeisimmät asetukset. <i>Poista listalta</i> poistaa pelin listalta (<i>Poista</i> poistaa myös tallennetut asetukset, <i>Säilytä</i> säilyttää ne; ne palaavat, jos lisäät pelin uudelleen samalla nimellä). Kansiota, joka on jo listalla, ei lisätä toiseen kertaan; löytynyt asetustiedosto kansiossa, joka ei ole listalla, otetaan käyttöön sen pääohjaimella.</p>
+
+<h3>Tallennukset ja varmistukset</h3>
+<p><b>Tallennukset ja varmistukset…</b> (yläpalkki) listaa pelin asetusten aiemmat tilat: <b>automaattiset varmistukset</b> (sovellus tekee ne itse ennen muutoksia ja säilyttää 5 uusinta) ja <b>omat tallennukset</b> (nimeät ja tallennat ne itse, ja ne säilyvät, kunnes poistat ne). Valitse yksi nähdäksesi, mitä sen palauttaminen muuttaisi nykytilaan verrattuna. Palautus toimii kuten mikä tahansa muokkaus: käynnissä olevalle pelille se tallentuu heti, muuten se jää luonnokseksi, kunnes painat <b>Tallenna</b>, ja tallennuksen jälkeen sen voi perua <b>Kumoa viimeisin tallennus</b> -painikkeella. Jokainen painallus peruu yhden tallennuksen (sulkeissa oleva luku kertoo, montako on jäljellä, enintään 30); tallennukset muistetaan vain pelin vaihtoon tai sovelluksen sulkemiseen asti, joten vanhemmille tiloille käytä automaattisia varmistuksia. Kun jokin toimii, tallenna se siellä <b>omaksi tallennukseksi</b> (nimetty kopio toimivasta tilasta). Jos vaihdat toiseen peliin tallentamattoman luonnoksen kanssa, sovellus kysyy, tallennetaanko, hylätäänkö vai perutaanko.</p>
+<h2 id="sanasto">8. Sanasto</h2>
+<dl>
+<dt>Proxy</dt><dd>Pieni DLL, jonka CtrlMuxr asentaa pelin kansioon. Se on "välittäjä" pelin ja Windowsin DirectInputin välissä: se lukee oikeat laitteesi ja antaa pelille yhden virtuaalisen ohjaimen. Se ei muuta peliä tai Windowsia.</dd>
+<dt>DLL</dt><dd>Ohjelmatiedosto (kirjasto), jonka ohjelmat lataavat käyttöönsä. Pelin kansion DLL ladataan ennen Windowsin omaa.</dd>
+<dt>DirectInput / winmm</dt><dd>Windowsin kaksi tapaa lukea peliohjaimia. Sovellus tunnistaa, kumpaa peli käyttää, ja asentaa oikean proxyn.</dd>
+<dt>INI</dt><dd>Tekstimuotoinen asetustiedosto (<code>dinput_proxy.ini</code>).</dd>
+<dt>Akseli</dt><dd>Jatkuva arvo (ratin kulma, poljin). Virtuaaliohjaimella on kahdeksan: X, Y, Z, Rx, Ry, Rz, S0, S1.</dd>
+<dt>Peitä (maski)</dt><dd>Akseli, jonka arvoksi pelille annetaan aina keskiarvo. Piilottaa laitteen turhat akselit.</dd>
+<dt>Puoliakseli</dt><dd>Poljin, jonka lepoasento on akselin keskellä.</dd>
+<dt>Jaa / Yhdistä</dt><dd>Yhden akselin jako kahdeksi / kahden akselin yhdistäminen yhdeksi.</dd>
+<dt>Digital</dt><dd>Akseli, joka toimii nappina kynnyksen (%) ylittyessä.</dd>
+<dt>Oma deadzone (dz)</dt><dd>Keskialue, jolla pienet liikkeet ohitetaan.</dd>
+<dt>Käyrä / expo</dt><dd>Pehmentää vastetta keskellä.</dd>
+<dt>Vahvistus (gain)</dt><dd>Ulostulon kerroin (100 % = muuttumaton).</dd>
+<dt>Anti-deadzone (adz)</dt><dd>Kumoaa pelin oman kuolleen alueen.</dd>
+<dt>Viiveen kumous (lead)</dt><dd>Kumoaa pelin syötteen tasoituksen (hidas tuntuma).</dd>
+<dt>Keskipiste</dt><dd>Raakaarvo, jonka peli katsoo keskikohdaksi (yleensä 32768).</dd>
+<dt>Esikatselu</dt><dd>Se, mitä <i>Peli näkee</i> näyttää silloin, kun peli ei ole käynnissä: sovellus laskee tuloksen laitteistasi samoilla säännöillä kuin proxy.</dd>
+<dt>FFB</dt><dd>Voimapalaute (Force Feedback): pelin lähettämät voimat ratille.</dd>
+<dt>Yksinoikeus (exclusive access)</dt><dd>Pelin tapa varata ohjain itselleen. FFB vaatii sen.</dd>
+<dt>Heksadesimaali (heksa)</dt><dd>Lukujärjestelmä, jossa on numerot 0–9 ja kirjaimet A–F, missä A = 10 ja F = 15. Sovellus näyttää osan luvuista heksana: laitetunnisteet (VID:PID, esim. <code>346E:0002</code>), lokin virhekoodit (<code>80070005</code>) ja <code>ClearFlags</code>-arvon (<code>A</code> = 10). Kirjoita ne sellaisina kuin ne näytetään, heksana.</dd>
+<dt>Oma tallennus</dt><dd>Nimellä tallennettu kopio pelin asetuksista, josta voit palata siihen myöhemmin.</dd>
+</dl>
+</main>
+</div>
+</body>
+</html>
