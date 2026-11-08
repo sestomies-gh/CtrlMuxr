@@ -332,6 +332,8 @@ struct Rec {
     int axOfs[8];           // X Y Z Rx Ry Rz S0 S1
     int btnOfs[128];
     LONG axMin[8], axMax[8];    // axis ranges the game selected with DIPROP_RANGE (default 0..65535)
+    bool pendSet[8];            // DIPROP_RANGE (by id) that arrived before SetDataFormat: kept per axis, applied when the layout is known
+    LONG pendMin[8], pendMax[8];
     DWORD devType, capsFlags, gameDz;   // device type / caps flags reported to the game, deadzone (0..10000) the game asked for
     HWND coopHwnd; DWORD coopFlags;     // last SetCooperativeLevel the game made on this device (flags as in effect), for the Acquire fallback
     bool coopFallback;                  // the device runs on the non-exclusive fallback level (no force feedback); TryUpgrade may restore exclusive
@@ -1349,6 +1351,11 @@ static HRESULT WINAPI H_SetDataFormat(void* self, const DIDATAFORMAT* f)
                 }
             }
             r->fmtKnown = true;
+            for (int a = 0; a < 8; a++)
+                if (r->pendSet[a] && r->axOfs[a] >= 0) {
+                    r->axMin[a] = r->pendMin[a]; r->axMax[a] = r->pendMax[a];
+                    Log("  range of %s [%ld,%ld] (set before SetDataFormat) applied", AXIS_NAMES[a], r->pendMin[a], r->pendMax[a]);
+                }
             Log("  layout: size=%lu axes ofs: %d %d %d %d %d %d %d %d, first buttons ofs: %d %d %d", r->fmtSize, r->axOfs[0], r->axOfs[1],
                 r->axOfs[2], r->axOfs[3], r->axOfs[4], r->axOfs[5], r->axOfs[6], r->axOfs[7], r->btnOfs[0], r->btnOfs[1], r->btnOfs[2]);
         }
@@ -1369,6 +1376,58 @@ static HRESULT WINAPI H_SetCooperativeLevel(void* self, HWND hwnd, DWORD flags)
     HRESULT hr = ((PFN_SetCoop)Orig(self, 13))(self, hwnd, use);
     (FAILED(hr) ? LogErr : Log)("SetCooperativeLevel %s hwnd=%p flags=%lX%s hr=%lX", DevName(self), (void*)hwnd, flags, use != flags ? " (-> A)" : "", (unsigned long)hr);
     return hr;
+}
+
+struct SliderEnum { DWORD target; int n; int rank; };
+static BOOL CALLBACK SliderEnumCbA(const DIDEVICEOBJECTINSTANCEA* o, void* ref)
+{
+    SliderEnum* e = (SliderEnum*)ref;
+    if (IsEqualGUID(o->guidType, GUID_Slider)) { if ((o->dwType & 0x00FFFFFF) == e->target) e->rank = e->n; e->n++; }
+    return DIENUM_CONTINUE;
+}
+static BOOL CALLBACK SliderEnumCbW(const DIDEVICEOBJECTINSTANCEW* o, void* ref)
+{
+    SliderEnum* e = (SliderEnum*)ref;
+    if (IsEqualGUID(o->guidType, GUID_Slider)) { if ((o->dwType & 0x00FFFFFF) == e->target) e->rank = e->n; e->n++; }
+    return DIENUM_CONTINUE;
+}
+
+// Axis index (X Y Z Rx Ry Rz S0 S1) of the object with this id, from its GUID; -1 if unknown. Works before SetDataFormat.
+static int AxisIndexOfId(void* self, DWORD id)
+{
+    DIDEVICEOBJECTINSTANCEA oi;
+    DIDEVICEOBJECTINSTANCEW oiw;
+    memset(&oi, 0, sizeof oi);
+    memset(&oiw, 0, sizeof oiw);
+    oi.dwSize = sizeof(DIDEVICEOBJECTINSTANCE_DX3A);
+    oiw.dwSize = sizeof(DIDEVICEOBJECTINSTANCE_DX3W);
+    typedef HRESULT (WINAPI *PFN_GetObjInfo)(void*, DIDEVICEOBJECTINSTANCEA*, DWORD, DWORD);
+    typedef HRESULT (WINAPI *PFN_GetObjInfoW)(void*, DIDEVICEOBJECTINSTANCEW*, DWORD, DWORD);
+    void* goi = Slot(self, 14);
+    GUID gt; DWORD ofs;
+    if (!goi) return -1;
+    if (g_wide) {
+        if (FAILED(((PFN_GetObjInfoW)goi)(self, &oiw, id, DIPH_BYID))) return -1;
+        gt = oiw.guidType; ofs = oiw.dwOfs;
+    } else {
+        if (FAILED(((PFN_GetObjInfo)goi)(self, &oi, id, DIPH_BYID))) return -1;
+        gt = oi.guidType; ofs = oi.dwOfs;
+    }
+    if (IsEqualGUID(gt, GUID_XAxis)) return 0;
+    if (IsEqualGUID(gt, GUID_YAxis)) return 1;
+    if (IsEqualGUID(gt, GUID_ZAxis)) return 2;
+    if (IsEqualGUID(gt, GUID_RxAxis)) return 3;
+    if (IsEqualGUID(gt, GUID_RyAxis)) return 4;
+    if (IsEqualGUID(gt, GUID_RzAxis)) return 5;
+    if (IsEqualGUID(gt, GUID_Slider)) {         // sliders: S0/S1 = the first two slider objects in the device's own enumeration order (a device can have 3)
+        SliderEnum se; memset(&se, 0, sizeof se); se.target = id & 0x00FFFFFF; se.rank = -1;
+        typedef HRESULT (WINAPI *PFN_EnumObj)(void*, void*, void*, DWORD);
+        PFN_EnumObj eo = (PFN_EnumObj)Slot(self, 4);
+        if (!eo) return -1;
+        eo(self, g_wide ? (void*)SliderEnumCbW : (void*)SliderEnumCbA, &se, DIDFT_AXIS);
+        return se.rank >= 0 && se.rank < 2 ? 6 + se.rank : -1;
+    }
+    return -1;
 }
 
 static HRESULT WINAPI H_SetProperty(void* self, const GUID* prop, const DIPROPHEADER* h)
@@ -1393,8 +1452,17 @@ static HRESULT WINAPI H_SetProperty(void* self, const GUID* prop, const DIPROPHE
         unsigned long id = (unsigned long)(ULONG_PTR)prop;
         if (SUCCEEDED(hr) && (ULONG_PTR)prop == 4 && h->dwSize == sizeof(DIPROPRANGE)) {   // DIPROP_RANGE
             const DIPROPRANGE* pr = (const DIPROPRANGE*)h;
+            int pendAxis = -1;      // range set by id before the game chose its data format: remember it per axis
+            if (h->dwHow == DIPH_BYID) pendAxis = AxisIndexOfId(self, h->dwObj);
             EnterCriticalSection(&g_cs);
             Rec* me = FindRec(self);
+            if (pendAxis >= 0 && me && !me->fmtKnown) {
+                for (int i = 0; i < g_nRec; i++) {
+                    Rec* r = &g_rec[i];
+                    if (r->vid != me->vid || r->pid != me->pid || r->fmtKnown) continue;
+                    r->pendSet[pendAxis] = true; r->pendMin[pendAxis] = pr->lMin; r->pendMax[pendAxis] = pr->lMax;
+                }
+            }
             for (int i = 0; me && i < g_nRec; i++) {
                 Rec* r = &g_rec[i];
                 if (r->vid != me->vid || r->pid != me->pid) continue;

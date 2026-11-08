@@ -3,7 +3,7 @@ rem Builds dist\CtrlMuxr-<version>.zip: the minimal distribution (top folder "Ct
 rem Does not rebuild anything: run app\build.bat and src\proxy\build.bat first. Personal INIs and data\games are never included.
 setlocal
 cd /d "%~dp0"
-set VER=1.14
+set VER=1.15
 set STAGE=dist\stage\CtrlMuxr
 set ZIP=dist\CtrlMuxr-%VER%.zip
 

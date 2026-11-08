@@ -15,8 +15,8 @@ using System.Reflection;
 [assembly: AssemblyTitle("CtrlMuxr - game controller multiplexer")]
 [assembly: AssemblyProduct("CtrlMuxr")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 sestomies-gh")]
-[assembly: AssemblyVersion("1.14.0.0")]
-[assembly: AssemblyFileVersion("1.14.0.0")]
+[assembly: AssemblyVersion("1.15.0.0")]
+[assembly: AssemblyFileVersion("1.15.0.0")]
 
 namespace CtrlMuxr
 {
@@ -3278,6 +3278,10 @@ namespace CtrlMuxr
                 ApplyPresetCore(2);
                 vdSaveTimer.Stop(); SaveVirtual();
                 Chk(sb, "preset combined pedals: Y combined, identity and button limit untouched", cp.Get("AxisCombine", "346E:0002.Y") != null && cp.Get("Identity", "346E:0002") == null && cp.Get("Caps", "MaxButtons") == null);
+                ApplyPresetCore(4);
+                vdSaveTimer.Stop(); SaveVirtual();
+                IniFile gp = IniFile.Load(iniPath2);
+                Chk(sb, "preset G27: gas Y, brake Rz, clutch S1 inverted, others masked, identity G27", (gp.Get("AxisMap", "346E:0002.Y") ?? "").EndsWith("invert") && (gp.Get("AxisMap", "346E:0002.Rz") ?? "").EndsWith("invert") && (gp.Get("AxisMap", "346E:0002.S1") ?? "").EndsWith("invert") && gp.Get("AxisMap", "346E:0002.Z") == null && (gp.Get("Mask", "346E:0002") ?? "").Contains("Z") && (gp.Get("Identity", "346E:0002") ?? "").StartsWith("046D:C29B"));
             }
             // button source list: sized by the device, named and mapped buttons always shown, "only named" keeps just those
             Chk(sb, "buttons: beyond the device's count hidden, named/mapped shown", !ButtonShown(5, 4, false, false, false) && ButtonShown(3, 4, false, false, false) && ButtonShown(9, 4, true, false, false) && ButtonShown(9, 4, false, true, false));
@@ -3300,7 +3304,7 @@ namespace CtrlMuxr
             Panel top = new Panel(); top.Dock = DockStyle.Top; top.Height = 146;
             Label pl = new Label(); pl.Text = Loc.T("vd.preset"); pl.Left = 10; pl.Top = 12; pl.AutoSize = true;
             presetBox.DropDownStyle = ComboBoxStyle.DropDownList; presetBox.Left = pl.Left + pl.PreferredWidth + 16; presetBox.Top = 8; presetBox.Width = 330; presetBox.DropDownWidth = 560;
-            presetBox.Items.AddRange(new object[] { Loc.T("vd.preset0"), Loc.T("vd.preset1"), Loc.T("vd.preset2"), Loc.T("vd.preset3") });
+            presetBox.Items.AddRange(new object[] { Loc.T("vd.preset0"), Loc.T("vd.preset1"), Loc.T("vd.preset2"), Loc.T("vd.preset3"), Loc.T("vd.preset4") });
             presetBox.SelectedIndex = 0;
             // choosing a layout only describes it; the table changes when the button is pressed and confirmed
             presetBox.SelectedIndexChanged += delegate { UpdatePresetInfo(); };
@@ -3789,6 +3793,12 @@ namespace CtrlMuxr
                 int[] outs = new int[] { 1, 2, 3, 4 };      // Y Z Rx Ry
                 for (int k = 0; k < 4; k++) if (sources[k] > 0) { vdSrc[outs[k]].SelectedIndex = sources[k]; vdMode[outs[k]].SelectedIndex = p == 3 ? 1 : 0; }
             }
+            else if (p == 4)     // Logitech G27 as the game's own table has it: gas Y, brake Rz, clutch S1, all inverted (rest at the maximum)
+            {
+                int[] sources = new int[] { gas, brake, clutch };
+                int[] outs = new int[] { 1, 5, 7 };         // Y Rz S1
+                for (int k = 0; k < 3; k++) if (sources[k] > 0) { vdSrc[outs[k]].SelectedIndex = sources[k]; vdMode[outs[k]].SelectedIndex = 0; vdInv[outs[k]].Checked = true; }
+            }
             else                 // combined pedals on Y
             {
                 vdSrc[1].SelectedIndex = gas; vdSrc2[1].SelectedIndex = brake; vdMode[1].SelectedIndex = ModeCombine;
@@ -3804,6 +3814,21 @@ namespace CtrlMuxr
             }
             vdLoading = false;
             VdChanged();
+            if (p == 4) SetIdentityG27();
+        }
+
+        // the G27 layout also makes the game see a G27 (its table is chosen by the controller's product id)
+        void SetIdentityG27()
+        {
+            if (cur == null || ini == null || DestKey == null) return;
+            try
+            {
+                if (!dirty) ini = IniFile.Load(IniPath);
+                ini.Set("Identity", DestKey, IdentityValues[IdentityValues.Length - 1]);
+                CommitIni();
+                RefreshAdvanced();
+            }
+            catch (Exception ex) { Dlg.Show(this, Loc.T("msg.savefail") + ex.Message, "CtrlMuxr"); }
         }
 
         // live view: what the proxy hands to the game (only while the selected game is running)
@@ -4571,7 +4596,7 @@ namespace CtrlMuxr
         ComboBox advIdentity = new NoWheelCombo(), advDevType = new NoWheelCombo();
         bool advLoading;
         string advIdCustom, advTypeCustom;                 // a value written by hand that is not one of the choices: kept as it is
-        static readonly string[] IdentityValues = new string[] { "", "046D:C298 Logitech Driving Force Pro", "046D:CA03 Logitech MOMO Racing Force Feedback Wheel", "045E:0034 Microsoft SideWinder Force Feedback Wheel" };       // DFP ID from memory (hid-lg4ff / usb.ids), not checked; SideWinder FF Wheel 045E:0034 (3 axes, 8 buttons) from ffb-probe.com, one report; MOMO Racing CA03 read from a real wheel by the user
+        static readonly string[] IdentityValues = new string[] { "", "046D:C298 Logitech Driving Force Pro", "046D:CA03 Logitech MOMO Racing Force Feedback Wheel", "045E:0034 Microsoft SideWinder Force Feedback Wheel", "046D:C29B Logitech G27 Racing Wheel" };       // DFP ID from memory (hid-lg4ff / usb.ids), not checked; SideWinder FF Wheel 045E:0034 (3 axes, 8 buttons) from ffb-probe.com, one report; MOMO Racing CA03 read from a real wheel by the user
         const string DevTypeJoystick = "10114";
 
         int AdvHead(TableLayoutPanel t, int row, string title)
