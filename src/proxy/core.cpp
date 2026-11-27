@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 #include <mmsystem.h>
 #include "core.h"
 
@@ -374,6 +375,11 @@ static bool g_di8;                      // game uses DirectInput 8: devices carr
 static LONG g_ffBoost = 100;            // [FFB] Boost percent
 static bool g_blockSine;                // [FFB] BlockSine: periodic (sine) effects are never started (some wheels play them as a pull to one side; read at start)
 static bool g_gainAsMag;                // [FFB] GainAsMagnitude: strength sent as magnitude instead of per-effect gain (read at start)
+static bool g_singleAxis;               // [FFB] SingleAxis: effects the game describes on 2 axes are cut to 1 axis (wheel has one FFB axis; read at start)
+static bool g_oneAxisSign;              // [FFB] OneAxisSign (default 1 with SingleAxis): constant-force direction sign moved into the magnitude sign
+static bool g_oneAxisInv;               // [FFB] OneAxisInvert: flips left/right
+static double g_oneAxisScale = 1.0;     // [FFB] OneAxisScale: multiplies the constant force (0..10)
+static void ReadOneAxisCfg();
 static bool g_ignoreDz;                 // [Caps] IgnoreDeadzone=1: drop DIPROP_DEADZONE the game sets (use [Shape] dz= instead)
 static bool g_autoCoop = true;          // [Caps] AutoCoop=0 switches the Acquire fallback off (see H_Acquire)
 static bool g_nonExcl;                  // [Caps] NonExclusive=1: joystick cooperative level -> NONEXCLUSIVE|BACKGROUND (Acquire E_ACCESSDENIED workaround; disables FFB)
@@ -1003,6 +1009,9 @@ static void LoadConfig()      // call with g_cs held
     if (g_gainAsMag) Log("Config: FFB GainAsMagnitude=1");
     g_blockSine = GetPrivateProfileIntA("FFB", "BlockSine", 0, g_ini) != 0;
     if (g_blockSine) Log("Config: FFB BlockSine=1");
+    g_singleAxis = GetPrivateProfileIntA("FFB", "SingleAxis", 0, g_ini) != 0;
+    if (g_singleAxis) Log("Config: FFB SingleAxis=1");
+    ReadOneAxisCfg();
     g_ignoreDz = GetPrivateProfileIntA("Caps", "IgnoreDeadzone", 0, g_ini) != 0;
     if (g_ignoreDz) Log("Config: IgnoreDeadzone=1");
     g_nonExcl = GetPrivateProfileIntA("Caps", "NonExclusive", 0, g_ini) != 0;
@@ -1623,10 +1632,39 @@ static void LogEffect(const char* dev, const DIEFFECT* e)
     }
 }
 
+// [FFB] OneAxisSign / OneAxisInvert / OneAxisScale: read at start and on live reload (they only apply together with SingleAxis).
+static void ReadOneAxisCfg()
+{
+    g_oneAxisSign = GetPrivateProfileIntA("FFB", "OneAxisSign", 1, g_ini) != 0;
+    g_oneAxisInv = GetPrivateProfileIntA("FFB", "OneAxisInvert", 0, g_ini) != 0;
+    char b[32]; GetPrivateProfileStringA("FFB", "OneAxisScale", "1.0", b, sizeof b, g_ini);
+    g_oneAxisScale = atof(b); if (g_oneAxisScale < 0) g_oneAxisScale = 0; if (g_oneAxisScale > 10) g_oneAxisScale = 10;
+}
+
+// [FFB] SingleAxis: an effect described on 2 axes (1NSANE: offsets 0 and 4) is rejected by a wheel with ONE force-feedback axis
+// (E_INVALIDARG -> NULL effect in the game -> crash). Copy it cut to axis 0: polar direction -> 1-axis cartesian (X = sin(angle) * 10000),
+// two DICONDITIONs -> one. The direction/axes arrays keep their first element. dirT: caller-owned storage for the new direction.
+static bool TrimToOneAxis(const DIEFFECT* in, DIEFFECT* out, LONG* dirT)
+{
+    if (!g_singleAxis || !in || in->dwSize < sizeof(DIEFFECT_DX5) || in->cAxes != 2) return false;
+    __try {
+        memset(out, 0, sizeof *out);
+        memcpy(out, in, in->dwSize < sizeof *out ? in->dwSize : sizeof *out);
+        out->cAxes = 1;
+        if ((in->dwFlags & DIEFF_POLAR) && in->rglDirection) {
+            dirT[0] = (LONG)floor(sin((double)in->rglDirection[0] * 3.14159265358979323846 / 18000.0) * 10000.0 + 0.5); dirT[1] = 0;
+            out->rglDirection = dirT; out->dwFlags = (in->dwFlags & ~(DWORD)(DIEFF_POLAR | DIEFF_SPHERICAL)) | DIEFF_CARTESIAN;
+        }
+        if (in->cbTypeSpecificParams == 2 * sizeof(DICONDITION)) out->cbTypeSpecificParams = sizeof(DICONDITION);
+        return true;
+    } __except (EXCEPTION_EXECUTE_HANDLER) { return false; }
+}
+
 // The game (1997) passes polar coordinates with a single axis; current DirectInput rejects that with
 // E_INVALIDARG. Copy the effect and switch it to cartesian (one axis, direction value unchanged).
-static bool FixEffect(const DIEFFECT* in, DIEFFECT* out)
+static bool FixEffect(const DIEFFECT* in, DIEFFECT* out, LONG* dirT)
 {
+    if (TrimToOneAxis(in, out, dirT)) return true;
     if (!in || in->dwSize < sizeof(DIEFFECT_DX5) || in->cAxes != 1) return false;
     bool polar = (in->dwFlags & DIEFF_POLAR) != 0;
     // condition effects (spring/damper/...): the game supplies one DICONDITION (24 bytes) per axis of a 2-axis stick
@@ -1663,7 +1701,7 @@ static const DIEFFECT* BoostEffect(const DIEFFECT* in, DIEFFECT* out, BYTE* tsp 
 // through its gain (0..10000), and the Moza R9 driver ignores gain changes of a running effect: the effect keeps its start strength
 // (the wheel is pulled to one side at full force). Instead the device gain is fixed at 10000 and the strength (magnitude * gain) is sent
 // as the effect's magnitude, which the driver does follow.
-struct EffRec { void* eff; GUID guid; DWORD gain; LONG baseMag; DIPERIODIC per; bool havePer; };
+struct EffRec { void* eff; GUID guid; DWORD gain; LONG baseMag; DIPERIODIC per; bool havePer; LONG dir0; };
 static const int MAX_EFFS = 64;
 static EffRec g_effs[MAX_EFFS]; static int g_nEffs, g_nextEff;
 static int g_nGainConv;
@@ -1687,6 +1725,7 @@ static void RecordEffect(EffRec* r, const DIEFFECT* e, DWORD flags)
     if (!r || !e) return;
     __try {
         if (flags & DIEP_GAIN) r->gain = e->dwGain;
+        if ((flags & DIEP_DIRECTION) && e->cAxes >= 1 && e->rglDirection && !(e->dwFlags & DIEFF_POLAR)) r->dir0 = e->rglDirection[0];
         if ((flags & DIEP_TYPESPECIFICPARAMS) && e->lpvTypeSpecificParams) {
             if (IsConstGuid(r->guid) && e->cbTypeSpecificParams >= sizeof(DICONSTANTFORCE))
                 r->baseMag = ((const DICONSTANTFORCE*)e->lpvTypeSpecificParams)->lMagnitude;
@@ -1741,14 +1780,31 @@ static int g_nEffSet, g_nEffStart;
 
 static HRESULT WINAPI H_EffSetParameters(void* self, const DIEFFECT* e, DWORD flags)
 {
-    DIEFFECT fixed, conv, boosted;
+    DIEFFECT fixed, conv, boosted, oneax;
     BYTE tsp[64], tspc[16];
-    bool fix = FixEffect(e, &fixed);
-    EffRec* rec = (g_gainAsMag || g_blockSine) ? FindEff(self) : NULL;
+    LONG dirT[2];
+    bool fix = FixEffect(e, &fixed, dirT);
+    EffRec* rec = (g_gainAsMag || g_blockSine || g_singleAxis) ? FindEff(self) : NULL;
     if (rec) RecordEffect(rec, e, flags);
     DWORD fl = flags;
     if (rec && g_blockSine && IsPeriodicGuid(rec->guid)) fl &= ~(DWORD)DIEP_START;       // a blocked effect is never started
-    const DIEFFECT* use = BoostEffect(GainToMag(rec, fix ? &fixed : e, &fl, &conv, tspc), &boosted, tsp);
+    const DIEFFECT* use0 = GainToMag(rec, fix ? &fixed : e, &fl, &conv, tspc);
+    // SingleAxis + OneAxisSign: the game steers a constant force left/right with the direction sign only (magnitude >= 0), and a 1-axis
+    // effect ignores the sign -> send the sign as the magnitude sign (direction fixed +1), strength = |magnitude| * gain * OneAxisScale.
+    DICONSTANTFORCE cf1; static LONG dir1[2] = { 1, 0 };
+    if (rec && g_singleAxis && g_oneAxisSign && use0 && use0->dwSize >= sizeof(DIEFFECT_DX5) && IsConstGuid(rec->guid) && (fl & (DIEP_DIRECTION | DIEP_TYPESPECIFICPARAMS | DIEP_GAIN))) {
+        double base = fabs((double)rec->baseMag) * (rec->gain >= 10000 ? 1.0 : (double)rec->gain / 10000.0) * g_oneAxisScale;
+        if (base > 10000.0) base = 10000.0;
+        int sgn = (rec->dir0 < 0) ? -1 : 1; if (g_oneAxisInv) sgn = -sgn;
+        cf1.lMagnitude = (LONG)(sgn * base);
+        memset(&oneax, 0, sizeof oneax);
+        memcpy(&oneax, use0, use0->dwSize < sizeof oneax ? use0->dwSize : sizeof oneax);
+        oneax.cAxes = 1; oneax.rglDirection = dir1; oneax.dwFlags = (use0->dwFlags & ~(DWORD)(DIEFF_POLAR | DIEFF_SPHERICAL)) | DIEFF_CARTESIAN;
+        oneax.cbTypeSpecificParams = sizeof cf1; oneax.lpvTypeSpecificParams = &cf1; oneax.dwGain = 10000;
+        fl |= DIEP_DIRECTION | DIEP_TYPESPECIFICPARAMS | DIEP_GAIN;
+        use0 = &oneax;
+    }
+    const DIEFFECT* use = BoostEffect(use0, &boosted, tsp);
     if (g_nEffSet++ < 5) {
         Log("Effect SetParameters flags=%lX%s", flags, fix ? " (1-axis fix)" : "");
         LogEffect("effect", e);
@@ -1792,14 +1848,15 @@ static HRESULT WINAPI H_CreateEffect(void* self, const GUID* g, const DIEFFECT* 
     LogEffect(DevName(self), e);
     DIEFFECT fixed, conv, boosted;
     BYTE tsp[64], tspc[16];
-    bool fix = FixEffect(e, &fixed);
-    if (fix) Log("  CreateEffect: adjusted for 1 axis (polar->cartesian, conditions trimmed to 1)");
+    LONG dirT[2];
+    bool fix = FixEffect(e, &fixed, dirT);
+    if (fix) Log("  CreateEffect: adjusted for 1 axis (%s)", g_singleAxis && e && e->cAxes == 2 ? "SingleAxis: 2 axes cut to 1" : "polar->cartesian, conditions trimmed to 1");
     // GainAsMagnitude: the effect is created with its strength in the magnitude (the record is bound to the effect object afterwards)
     EffRec tmp; memset(&tmp, 0, sizeof tmp);
     const DIEFFECT* use = fix ? &fixed : e;
-    if (g_gainAsMag && g && e) {
+    if ((g_gainAsMag || g_singleAxis) && g && e) {
         tmp.guid = *g; tmp.gain = 10000;
-        RecordEffect(&tmp, e, DIEP_GAIN | DIEP_TYPESPECIFICPARAMS);
+        RecordEffect(&tmp, e, DIEP_GAIN | DIEP_TYPESPECIFICPARAMS | DIEP_DIRECTION);
         DWORD cf = DIEP_GAIN | DIEP_TYPESPECIFICPARAMS;
         use = GainToMag(&tmp, use, &cf, &conv, tspc);
     }
@@ -1807,7 +1864,11 @@ static HRESULT WINAPI H_CreateEffect(void* self, const GUID* g, const DIEFFECT* 
     if (SUCCEEDED(hr) && out && *out) {
         PatchSlot(*out, 6, (void*)H_EffSetParameters);
         PatchSlot(*out, 7, (void*)H_EffStart);
-        if ((g_gainAsMag || g_blockSine) && g) { EffRec* r = NewEff(*out, *g); r->gain = tmp.gain; r->baseMag = tmp.baseMag; r->per = tmp.per; r->havePer = tmp.havePer; }
+        if ((g_gainAsMag || g_blockSine || g_singleAxis) && g) { EffRec* r = NewEff(*out, *g); r->gain = tmp.gain; r->baseMag = tmp.baseMag; r->per = tmp.per; r->havePer = tmp.havePer; r->dir0 = tmp.dir0; }
+    }
+    if (FAILED(hr) && !g_singleAxis && e && e->cAxes == 2 && hr == E_INVALIDARG) {
+        static bool hinted;     // one stable line the app's log analysis looks for
+        if (!hinted) { hinted = true; LogErr("HINT SingleAxis: CreateEffect failed (E_INVALIDARG) for an effect on 2 axes; the wheel has one force-feedback axis. Enable [FFB] SingleAxis=1"); }
     }
     char gs[48] = "null";
     if (g) GuidStr(*g, gs);
@@ -2101,6 +2162,7 @@ static void MaybeReload()     // g_cs held
     ParseShape();
     ParseCombine();
     g_ffBoost = GetPrivateProfileIntA("FFB", "Boost", 100, g_ini);
+    ReadOneAxisCfg();
     ReloadLogMode(g_ini);
     for (int i = 0; i < g_nRec; i++) ConfigureRec(&g_rec[i]);
     if (g_wmEnabled) ConfigureRec(&g_wmRec);

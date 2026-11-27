@@ -15,8 +15,8 @@ using System.Reflection;
 [assembly: AssemblyTitle("CtrlMuxr - game controller multiplexer")]
 [assembly: AssemblyProduct("CtrlMuxr")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 sestomies-gh")]
-[assembly: AssemblyVersion("1.15.0.0")]
-[assembly: AssemblyFileVersion("1.15.0.0")]
+[assembly: AssemblyVersion("1.16.0.0")]
+[assembly: AssemblyFileVersion("1.16.0.0")]
 
 namespace CtrlMuxr
 {
@@ -361,6 +361,7 @@ namespace CtrlMuxr
         public DateTime Time;
         public List<string> BadCfg = new List<string>(), SrcFail = new List<string>(), AcqFail = new List<string>(), AcqRecovered = new List<string>();
         public bool WheelListed, WheelHidden, WheelOpened, OutSeen;
+        public bool HintSingleAxis;     // the proxy logged: CreateEffect failed on a 2-axis effect (the wheel has one force-feedback axis)
         public string WheelName;
         public Dictionary<string, int[]> SrcMin = new Dictionary<string, int[]>(), SrcMax = new Dictionary<string, int[]>();
         public int[] OutMin = new int[8], OutMax = new int[8];
@@ -426,6 +427,7 @@ namespace CtrlMuxr
                 l = l.Substring(b + 2);
                 string t = l.TrimStart();
                 if (t.StartsWith("Config: bad ") || t.StartsWith("Config: unknown ")) { s.BadCfg.Add(t.Substring(8)); continue; }
+                if (t.IndexOf("HINT SingleAxis") >= 0) { s.HintSingleAxis = true; continue; }
                 if (t.StartsWith("Source ") && t.IndexOf(" opened:") < 0 && !t.EndsWith(": back") && t.IndexOf(": lost (") < 0) { s.SrcFail.Add(t); continue; }
                 if (t.StartsWith("Acquire "))
                 {
@@ -3177,15 +3179,15 @@ namespace CtrlMuxr
             vdSaveTimer.Stop(); SaveVirtual();
 
             // advanced tab: [Caps], [FFB] Boost, [Identity], [DevType]
-            advMaxBtn.Value = 12; advFlagDev.Checked = true; advFlagFmt.Checked = true; advBoost.Value = 120; advIdentity.SelectedIndex = 1; advDevType.SelectedIndex = 1; advNonExcl.Checked = true; advAutoCoop.Checked = false; advGainMag.Checked = true; advBlockSine.Checked = true; logChks[0].Checked = true;
+            advMaxBtn.Value = 12; advFlagDev.Checked = true; advFlagFmt.Checked = true; advBoost.Value = 120; advIdentity.SelectedIndex = 1; advDevType.SelectedIndex = 1; advNonExcl.Checked = true; advAutoCoop.Checked = false; advGainMag.Checked = true; advBlockSine.Checked = true; advSingleAxis.Checked = true; logChks[0].Checked = true;
             IniFile ai = IniFile.Load(iniPath2);
-            Chk(sb, "advanced: values written", ai.Get("Caps", "MaxButtons") == "12" && ai.Get("Caps", "ClearFlags") == "A" && ai.Get("FFB", "Boost") == "120" && ai.Get("Caps", "NonExclusive") == "1" && ai.Get("Caps", "AutoCoop") == "0" && ai.Get("FFB", "GainAsMagnitude") == "1" && ai.Get("FFB", "BlockSine") == "1" && ai.Get("Log", "Always") == "1"
+            Chk(sb, "advanced: values written", ai.Get("Caps", "MaxButtons") == "12" && ai.Get("Caps", "ClearFlags") == "A" && ai.Get("FFB", "Boost") == "120" && ai.Get("Caps", "NonExclusive") == "1" && ai.Get("Caps", "AutoCoop") == "0" && ai.Get("FFB", "GainAsMagnitude") == "1" && ai.Get("FFB", "BlockSine") == "1" && ai.Get("FFB", "SingleAxis") == "1" && ai.Get("Log", "Always") == "1"
                 && (ai.Get("Identity", "346E:0002") ?? "").StartsWith("046D:C298") && ai.Get("DevType", "346E:0002") == "10114");
             RefreshAdvanced();
-            Chk(sb, "advanced: values reload", advMaxBtn.Value == 12 && advFlagDev.Checked && advFlagFmt.Checked && advBoost.Value == 120 && advIdentity.SelectedIndex == 1 && advDevType.SelectedIndex == 1 && advNonExcl.Checked && !advAutoCoop.Checked && advGainMag.Checked && advBlockSine.Checked && logChks.TrueForAll(delegate(CheckBox c) { return c.Checked; }));
-            advMaxBtn.Value = 0; advFlagDev.Checked = false; advFlagFmt.Checked = false; advBoost.Value = 100; advIdentity.SelectedIndex = 0; advDevType.SelectedIndex = 0; advNonExcl.Checked = false; advAutoCoop.Checked = true; advGainMag.Checked = false; advBlockSine.Checked = false; logChks[0].Checked = false;
+            Chk(sb, "advanced: values reload", advMaxBtn.Value == 12 && advFlagDev.Checked && advFlagFmt.Checked && advBoost.Value == 120 && advIdentity.SelectedIndex == 1 && advDevType.SelectedIndex == 1 && advNonExcl.Checked && !advAutoCoop.Checked && advGainMag.Checked && advBlockSine.Checked && advSingleAxis.Checked && logChks.TrueForAll(delegate(CheckBox c) { return c.Checked; }));
+            advMaxBtn.Value = 0; advFlagDev.Checked = false; advFlagFmt.Checked = false; advBoost.Value = 100; advIdentity.SelectedIndex = 0; advDevType.SelectedIndex = 0; advNonExcl.Checked = false; advAutoCoop.Checked = true; advGainMag.Checked = false; advBlockSine.Checked = false; advSingleAxis.Checked = false; logChks[0].Checked = false;
             ai = IniFile.Load(iniPath2);
-            Chk(sb, "advanced: defaults remove the keys", ai.Get("Caps", "MaxButtons") == null && ai.Get("Caps", "ClearFlags") == null && ai.Get("FFB", "Boost") == null && ai.Get("FFB", "GainAsMagnitude") == null && ai.Get("FFB", "BlockSine") == null && ai.Get("Log", "Always") == null && ai.Get("Identity", "346E:0002") == null && ai.Get("DevType", "346E:0002") == null && ai.Get("Caps", "AutoCoop") == null && ai.Get("Caps", "NonExclusive") == null);
+            Chk(sb, "advanced: defaults remove the keys", ai.Get("Caps", "MaxButtons") == null && ai.Get("Caps", "ClearFlags") == null && ai.Get("FFB", "Boost") == null && ai.Get("FFB", "GainAsMagnitude") == null && ai.Get("FFB", "BlockSine") == null && ai.Get("FFB", "SingleAxis") == null && ai.Get("Log", "Always") == null && ai.Get("Identity", "346E:0002") == null && ai.Get("DevType", "346E:0002") == null && ai.Get("Caps", "AutoCoop") == null && ai.Get("Caps", "NonExclusive") == null);
 
             // store: the working INI in the game folder and the master copy in the app's data folder
             string sf = Path.Combine(folder, "_sync"); Directory.CreateDirectory(sf);
@@ -3231,6 +3233,9 @@ namespace CtrlMuxr
             Chk(sb, "analysis: bad line, exclusive access and hidden unused device", alltxt.Contains("x") && alltxt.Contains(Loc.T("an.f.acq").Substring(0, 20)) && alltxt.Contains(Loc.T("an.f.hiddenunused").Substring(0, 12)));
             Chk(sb, "analysis: mapped source moved but the game axis did not", alltxt.Contains(string.Format(Loc.T("an.f.nopass"), "Rx")));
             Chk(sb, "suggestions are produced", Suggest(new int[] { 0, 2, 2, 0, 0, 0, 0 }).Length > 20);
+            File.WriteAllLines(Path.Combine(folder2, "dinput_9997.log"), new string[] { "[ 1] ERROR HINT SingleAxis: CreateEffect failed (E_INVALIDARG) for an effect on 2 axes" }, IniFile.Enc);
+            SessionLog th = SessionLog.Parse(Path.Combine(folder2, "dinput_9997.log"), "346E", "0002");
+            Chk(sb, "log: SingleAxis hint is read", th.HintSingleAxis);
             File.WriteAllLines(Path.Combine(folder2, "dinput_9998.log"), new string[] {
                 "[ 2] Device ready: MOZA R9 Base ptr=1 guidInstance=0",
                 "[ 3]   EnumW: \"MOZA R9 Base\" type=10604 VID=346E PID=0002" }, IniFile.Enc);
@@ -4398,6 +4403,7 @@ namespace CtrlMuxr
                 Finding st = new Finding(string.Format(Loc.T("an.f.stale"), sl.Name)); st.Glow = false; f.Add(st);
                 return f;                                                   // the log is from before the present settings: comparing them would mislead
             }
+            if (sl.HintSingleAxis && (ini.Get("FFB", "SingleAxis") ?? "0").Trim() == "0") f.Add(new Finding(Loc.T("an.f.singleaxis")));
             foreach (string b in sl.BadCfg) f.Add(new Finding(string.Format(Loc.T("an.f.bad"), b)));
             foreach (string b in sl.SrcFail) f.Add(new Finding(string.Format(Loc.T("an.f.srcfail"), b)));
             foreach (string b in sl.AcqFail) f.Add(new Finding(string.Format(Loc.T("an.f.acq"), b)));
@@ -4592,7 +4598,7 @@ namespace CtrlMuxr
 
         // ---------------------------------------------------------------- advanced tab ([Caps], [FFB] Boost, [Identity], [DevType])
         NumericUpDown advMaxBtn = new NoWheelNumeric(), advBoost = new NoWheelNumeric();
-        CheckBox advFlagDev = new CheckBox(), advFlagFmt = new CheckBox(), advIgnoreDz = new CheckBox(), advAutoCoop = new CheckBox(), advNonExcl = new CheckBox(), advGainMag = new CheckBox(), advBlockSine = new CheckBox();
+        CheckBox advFlagDev = new CheckBox(), advFlagFmt = new CheckBox(), advIgnoreDz = new CheckBox(), advAutoCoop = new CheckBox(), advNonExcl = new CheckBox(), advGainMag = new CheckBox(), advBlockSine = new CheckBox(), advSingleAxis = new CheckBox();
         ComboBox advIdentity = new NoWheelCombo(), advDevType = new NoWheelCombo();
         bool advLoading;
         string advIdCustom, advTypeCustom;                 // a value written by hand that is not one of the choices: kept as it is
@@ -4671,6 +4677,7 @@ namespace CtrlMuxr
             advAutoCoop.Text = "1"; advAutoCoop.AutoSize = true; advAutoCoop.CheckedChanged += ch;
             advNonExcl.Text = "1"; advNonExcl.AutoSize = true; advNonExcl.CheckedChanged += ch;
             advNonExcl.CheckedChanged += delegate { advAutoCoop.Enabled = !advNonExcl.Checked; };       // AutoCoop only matters when exclusive access is requested
+            advSingleAxis.Text = "1"; advSingleAxis.AutoSize = true; advSingleAxis.CheckedChanged += ch;
             advGainMag.Text = "1"; advGainMag.AutoSize = true; advGainMag.CheckedChanged += ch;
             advBlockSine.Text = "1"; advBlockSine.AutoSize = true; advBlockSine.CheckedChanged += ch;
             advIdentity.DropDownStyle = ComboBoxStyle.DropDownList; advIdentity.Width = 320; advIdentity.SelectedIndexChanged += ch;
@@ -4678,6 +4685,7 @@ namespace CtrlMuxr
             int row = 0;
             row = AdvHead(t, row, Loc.T("adv.group.ffb"));
             row = AdvNote(t, row, Loc.T("adv.group.ffb.note"));
+            row = AdvRow(t, row, "adv.singleaxis", advSingleAxis, true);
             row = AdvRow(t, row, "adv.gainmag", advGainMag, true);
             row = AdvRow(t, row, "adv.blocksine", advBlockSine, true);
             row = AdvRow(t, row, "adv.boost", advBoost, false);
@@ -4720,6 +4728,7 @@ namespace CtrlMuxr
             advNonExcl.Checked = (ini.Get("Caps", "NonExclusive") ?? "0").Trim() != "0";
             int bo; if (!int.TryParse(ini.Get("FFB", "Boost") ?? "100", out bo)) bo = 100;
             advBoost.Value = Math.Max(10, Math.Min(300, bo));
+            advSingleAxis.Checked = (ini.Get("FFB", "SingleAxis") ?? "0").Trim() != "0";
             advGainMag.Checked = (ini.Get("FFB", "GainAsMagnitude") ?? "0").Trim() != "0";
             advBlockSine.Checked = (ini.Get("FFB", "BlockSine") ?? "0").Trim() != "0";
             // wheel identity
@@ -4764,6 +4773,7 @@ namespace CtrlMuxr
                 if (advNonExcl.Checked) ini.Set("Caps", "NonExclusive", "1"); else ini.Remove("Caps", "NonExclusive");
                 int bo = (int)advBoost.Value;
                 if (bo != 100) ini.Set("FFB", "Boost", bo.ToString()); else ini.Remove("FFB", "Boost");
+                if (advSingleAxis.Checked) ini.Set("FFB", "SingleAxis", "1"); else ini.Remove("FFB", "SingleAxis");
                 if (advGainMag.Checked) ini.Set("FFB", "GainAsMagnitude", "1"); else ini.Remove("FFB", "GainAsMagnitude");
                 if (advBlockSine.Checked) ini.Set("FFB", "BlockSine", "1"); else ini.Remove("FFB", "BlockSine");
                 int si = advIdentity.SelectedIndex;

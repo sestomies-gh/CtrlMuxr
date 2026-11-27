@@ -59,7 +59,7 @@ Tested by the author with a Moza wheel and racing games from developers includin
 * **Proxy DLLs.** `dinput`, `dinput8` or `msacm32` in the game's folder (the app picks the one the game loads) let the game load the real system library and add the mapping on top; winmm joystick calls are handled by the same proxy. The mapping lives in `dinput_proxy.ini` beside it and is read while the game runs, except a few settings that apply at start.
 * **Mapping rules** (same order in the proxy and in the app's preview): mask → axis map → button map → axis-to-button → combine two axes → shape.
 * **Force feedback.** Effects pass to the real wheel as the game creates them. Per-game options are in `[FFB]` (`GainAsMagnitude`, `BlockSine`, `Boost`); the proxy also fixes DX5 effect types some games send.
-* **Identity.** The wheel can be shown to the game as a known wheel (Logitech Driving Force Pro, Logitech MOMO Racing, Microsoft SideWinder FF Wheel). The Driving Force Pro ID is not checked on real hardware; the SideWinder ID (045E:0034) comes from a hardware database.
+* **Identity.** The wheel can be shown to the game as a known wheel (Logitech Driving Force Pro, Logitech MOMO Racing, Logitech G27, Microsoft SideWinder FF Wheel). The Driving Force Pro ID is not checked on real hardware; the SideWinder ID (045E:0034) comes from a hardware database.
 
 ### Repository
 
@@ -89,8 +89,8 @@ CtrlMuxr is released under the [MIT License](LICENSE). The proxy DLLs contain on
 
 CtrlMuxr is an independent project. It is not affiliated with, endorsed by or sponsored by Moza Racing, Logitech,
 Microsoft, Valve (Steam) or any game developer or publisher. All product names, game titles, logos and trademarks
-(for example "Moza", "Logitech", "Driving Force", "MOMO", "SideWinder", "Windows", "DirectInput", "Steam") belong to their
-respective owners and are used only to describe compatibility. The "Logitech Driving Force" preset and the Identity list
+(for example "Moza", "Logitech", "Driving Force", "G27", "MOMO", "SideWinder", "Windows", "DirectInput", "Steam") belong to their
+respective owners and are used only to describe compatibility. The "Logitech G27" ready layout and the Identity list
 only mimic the names, IDs, button and axis layout of those devices; they do not contain any Logitech or Microsoft software.
 
 The software is provided "as is", without warranty of any kind. Use is at your own risk. CtrlMuxr places a proxy DLL
